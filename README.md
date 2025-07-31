@@ -1,70 +1,183 @@
-# Getting Started with Create React App
+# 🍳 Recipe Creator App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, feature-rich recipe management application built with React. Manage your recipes, track your pantry, scan receipts with OCR, and get cooking suggestions based on dietary restrictions and available ingredients.
 
-## Available Scripts
+## ✨ Features
 
-In the project directory, you can run:
+### 🍽️ Recipe Management
+- Create, edit, and organize your favorite recipes
+- Add ingredients with precise quantities and units
+- Include cooking instructions and timing
+- Beautiful, responsive recipe cards
 
-### `npm start`
+### 🥫 Smart Pantry
+- Track all your pantry items with quantities
+- Add items manually or scan grocery receipts
+- **OCR Receipt Scanning** - Upload receipt photos for automatic item extraction
+- Intelligent parsing of various receipt formats (Walmart, Target, generic stores)
+- Merge quantities for duplicate items
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 👥 User Management
+- Add family members and friends
+- Track dietary restrictions and allergens
+- UK Law compliant with 14 major allergen categories
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🧑‍🍳 Cooking Suggestions
+- Get recipe recommendations based on available ingredients
+- Filter by allergen restrictions for specific users
+- Smart ingredient matching and substitution hints
 
-### `npm test`
+## 🏗️ Architecture
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This project uses a **modern feature-based architecture** for maximum scalability and maintainability:
 
-### `npm run build`
+```
+src/
+├── app/           # Application entry point
+├── features/      # Feature-based organization
+│   ├── recipes/   # Recipe management
+│   ├── pantry/    # Pantry & receipt scanning
+│   ├── users/     # User management
+│   └── cooking-for/ # Cooking suggestions
+├── shared/        # Shared utilities, hooks, constants
+├── assets/        # Static assets
+└── styles/        # Global styles
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed documentation.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🚀 Getting Started
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Prerequisites
+- Node.js 16+ and npm
+- Modern web browser with camera access (for receipt scanning)
 
-### `npm run eject`
+### Installation
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd recipe-app
+   ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3. **Start the development server**
+   ```bash
+   npm start
+   ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+4. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-## Learn More
+## 🛠️ Available Scripts
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Development
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Code Quality
+- `npm run lint` - Check code style
+- `npm run lint:fix` - Fix code style issues
+- `npm run format` - Format code with Prettier
 
-### Code Splitting
+### Analysis
+- `npm run analyze` - Analyze bundle size
+- `npm run clean` - Clean build artifacts
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🎯 Usage
 
-### Analyzing the Bundle Size
+### Recipe Management
+1. Click the "Recipes" tab
+2. Use "Create New Recipe" to add recipes
+3. Fill in ingredients, instructions, and cooking time
+4. Edit or delete recipes as needed
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Pantry Tracking
+1. Navigate to the "Pantry" tab
+2. **Manual Entry**: Click "Add to Pantry" for individual items
+3. **Receipt Scanning**: Click "Scan Receipt" and either:
+   - Upload a photo of your receipt (OCR will extract items)
+   - Paste receipt text manually
+4. Select items to add and click "Save to Pantry"
 
-### Making a Progressive Web App
+### User Management
+1. Go to the "Users" tab
+2. Add family members with their allergen information
+3. Use UK Law compliant allergen categories
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Cooking Suggestions
+1. Visit the "Cooking For" tab
+2. Select a user to cook for
+3. Get recipe suggestions based on:
+   - Available pantry ingredients
+   - User's allergen restrictions
+   - Ingredient matching algorithms
 
-### Advanced Configuration
+## 🔧 Technical Features
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### OCR Receipt Scanning
+- **Tesseract.js** integration for in-browser OCR
+- Support for various receipt formats
+- Intelligent item parsing with regex patterns
+- Automatic quantity and unit detection
+- Image optimization for better recognition
 
-### Deployment
+### Data Persistence
+- Local storage for offline functionality
+- Custom hooks for state management
+- Automatic data synchronization
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Responsive Design
+- Mobile-first design approach
+- Touch-friendly interfaces
+- Optimized for various screen sizes
 
-### `npm run build` fails to minify
+## 🏷️ Technologies Used
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **Frontend**: React 19, CSS3, HTML5
+- **OCR**: Tesseract.js
+- **Testing**: Jest, React Testing Library
+- **Build**: Create React App
+- **Code Quality**: ESLint, Prettier
+
+## 📱 Browser Support
+
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers with camera access
+
+## 🔒 Privacy & Data
+
+- All data stored locally in your browser
+- No server communication required
+- Receipt images processed locally (not uploaded)
+- Full privacy and data control
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow the existing code patterns and architecture
+4. Run tests and linting (`npm test && npm run lint`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support, feature requests, or bug reports, please open an issue on GitHub.
+
+---
+
+Built with ❤️ and modern React patterns. Enjoy cooking! 🍳✨
