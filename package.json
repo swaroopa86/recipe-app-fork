@@ -16,6 +16,7 @@
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "crypto-js": "^4.2.0",
     "jwt-decode": "^4.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -33,7 +34,8 @@
     "lint:fix": "eslint src/**/*.{js,jsx} --fix",
     "format": "prettier --write src/**/*.{js,jsx,css,md}",
     "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
-    "clean": "rm -rf build node_modules/.cache"
+    "clean": "rm -rf build node_modules/.cache",
+    "encrypt-env": "node scripts/encrypt-env.js"
   },
   "eslintConfig": {
     "extends": [

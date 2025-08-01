@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage, userSerializer } from '../shared';
 import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage } from '../features';
+import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
   if (!currentUser) {
     return (
       
-      <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+      <GoogleOAuthProvider clientId={getDecryptedGoogleClientId()}>
         <LoginPage onLogin={handleLogin} />
       </GoogleOAuthProvider>
     );
