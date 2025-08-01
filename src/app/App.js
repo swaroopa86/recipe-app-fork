@@ -23,7 +23,8 @@ function App() {
   // If user is not logged in, show login page
   if (!currentUser) {
     return (
-      <GoogleOAuthProvider clientId="723663086587-drddqfg1vht12the6o24tvr2oh2uvfho.apps.googleusercontent.com">
+      
+      <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
         <LoginPage onLogin={handleLogin} />
       </GoogleOAuthProvider>
     );
