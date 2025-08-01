@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useLocalStorage, userSerializer } from '../shared';
-import { RecipesPage, UsersPage, PantryPage, CookingForPage } from '../features';
+import { RecipesPage, UsersPage, PantryPage, CookingForPage, ShoppingListPage } from '../features';
 import './App.css';
 
 function App() {
   const [recipes, setRecipes] = useLocalStorage('recipes', []);
   const [users, setUsers] = useLocalStorage('users', [], userSerializer);
   const [pantryItems, setPantryItems] = useLocalStorage('pantryItems', []);
-  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', or 'cooking-for'
+  const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
+  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
 
   return (
     <div className="App">
@@ -39,6 +40,16 @@ function App() {
             )}
           </button>
           <button
+            className={`nav-btn ${currentPage === 'shopping-list' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('shopping-list')}
+          >
+            <span className="nav-icon">🛒</span>
+            Shopping List
+            {shoppingList.length > 0 && (
+              <span className="shopping-badge">{shoppingList.length}</span>
+            )}
+          </button>
+          <button
             className={`nav-btn ${currentPage === 'users' ? 'active' : ''}`}
             onClick={() => setCurrentPage('users')}
           >
@@ -56,10 +67,20 @@ function App() {
           <RecipesPage recipes={recipes} setRecipes={setRecipes} users={users} />
         )}
         {currentPage === 'cooking-for' && (
-          <CookingForPage recipes={recipes} users={users} pantryItems={pantryItems} />
+          <CookingForPage 
+            recipes={recipes} 
+            users={users} 
+            pantryItems={pantryItems} 
+            setPantryItems={setPantryItems}
+            shoppingList={shoppingList}
+            setShoppingList={setShoppingList}
+          />
         )}
         {currentPage === 'pantry' && (
           <PantryPage pantryItems={pantryItems} setPantryItems={setPantryItems} />
+        )}
+        {currentPage === 'shopping-list' && (
+          <ShoppingListPage shoppingList={shoppingList} setShoppingList={setShoppingList} />
         )}
         {currentPage === 'users' && (
           <UsersPage users={users} setUsers={setUsers} />

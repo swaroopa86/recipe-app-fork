@@ -99,6 +99,22 @@
   right: -5px;
 }
 
+.shopping-badge {
+  background: #FF9800;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+}
+
 .App-main {
   max-width: 1200px;
   margin: 0 auto;
