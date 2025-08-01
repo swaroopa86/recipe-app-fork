@@ -4,6 +4,12 @@ A modern, feature-rich recipe management application built with React. Manage yo
 
 ## ✨ Features
 
+### 🔐 Authentication
+- **Google OAuth Integration** - Secure login with Google accounts
+- User profile management with avatar and personal information
+- Persistent login sessions
+- Beautiful, modern login interface
+
 ### 🍽️ Recipe Management
 - Create, edit, and organize your favorite recipes
 - Add ingredients with precise quantities and units
@@ -65,12 +71,16 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed documentation.
    npm install
    ```
 
-3. **Start the development server**
+3. **Set up Google OAuth** (Required for authentication)
+   - Follow the [Google OAuth Setup Guide](./GOOGLE_OAUTH_SETUP.md)
+   - Update the Client ID in `src/app/App.js`
+
+4. **Start the development server**
    ```bash
    npm start
    ```
 
-4. **Open your browser**
+5. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 🛠️ Available Scripts
@@ -181,3 +191,4 @@ For support, feature requests, or bug reports, please open an issue on GitHub.
 ---
 
 Built with ❤️ and modern React patterns. Enjoy cooking! 🍳✨
+##test##
