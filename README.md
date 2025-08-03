@@ -1,4 +1,4 @@
-# 🍳 Recipe Creator App
+# 🍳 Smart Pantry App
 
 A modern, feature-rich recipe management application built with React. Manage your recipes, track your pantry, scan receipts with OCR, and get cooking suggestions based on dietary restrictions and available ingredients.
 
