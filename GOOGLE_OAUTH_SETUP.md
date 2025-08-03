@@ -13,7 +13,7 @@ This guide will help you set up Google OAuth authentication for your Recipe App.
 1. In the Google Cloud Console, go to "APIs & Services" > "OAuth consent screen"
 2. Choose "External" user type (unless you have a Google Workspace organization)
 3. Fill in the required information:
-   - App name: "Recipe Creator"
+   - App name: "Samrt Pantry"
    - User support email: Your email
    - Developer contact information: Your email
 4. Add scopes:

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage, userSerializer } from '../shared';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage } from '../features';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 
@@ -35,7 +35,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div className="header-top">
-          <h1>Recipe Creator</h1>
+          <h1>Smart Pantry</h1>
           <div className="user-info">
             <img 
               src={currentUser.picture} 
@@ -131,6 +131,7 @@ function App() {
           <UserDetailsPage currentUser={currentUser} />
         )}
       </main>
+      <Chatbot />
     </div>
   );
 }

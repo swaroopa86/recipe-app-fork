@@ -31,7 +31,7 @@ function LoginPage({ onLogin }) {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>🍳 Recipe Creator</h1>
+          <h1>🍳 Smart Pantry</h1>
           <p>Sign in to manage your recipes and pantry</p>
         </div>
         
