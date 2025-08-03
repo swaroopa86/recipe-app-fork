@@ -10,7 +10,7 @@ const getEncryptionKey = () => {
   }
   
   // Fallback key - in production, you should always set REACT_APP_ENCRYPTION_KEY
-  return 'recipe-app-secure-key-2024';
+  return '';
 };
 
 /**

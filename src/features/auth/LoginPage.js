@@ -7,7 +7,6 @@ function LoginPage({ onLogin }) {
   const handleSuccess = (credentialResponse) => {
     try {
       const decoded = jwtDecode(credentialResponse.credential);
-      console.log('Google login successful:', decoded);
       
       // Create user object from Google data
       const user = {
