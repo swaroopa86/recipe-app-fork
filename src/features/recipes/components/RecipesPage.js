@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { UNITS } from '../../../shared/constants/units';
 import { TIME_UNITS } from '../../../shared/constants/timeUnits';
 import { createRecipe, deleteRecipe } from '../../../shared/api';
+import RecipeModal from './RecipeModal';
 import './RecipesPage.css';
 
 const RecipesPage = ({ recipes, users, refreshRecipes }) => {
@@ -16,6 +17,8 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
   });
 
   const [showForm, setShowForm] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
 
   const handleNameChange = useCallback((e) => {
     const value = e.target.value;
@@ -165,6 +168,16 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
     }
   }, [refreshRecipes]);
 
+  const openRecipeModal = useCallback((recipe) => {
+    setSelectedRecipe(recipe);
+    setShowRecipeModal(true);
+  }, []);
+
+  const closeRecipeModal = useCallback(() => {
+    setShowRecipeModal(false);
+    setSelectedRecipe(null);
+  }, []);
+
   return (
     <div className="recipes-page-container">
       {/* Main recipes section */}
@@ -186,7 +199,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
         ) : (
           <div className="recipes-grid">
             {recipes.map((recipe) => (
-              <div key={recipe.id} className="recipe-card">
+              <div key={recipe.id} className="recipe-card" onClick={() => openRecipeModal(recipe)}>
                 <div className="recipe-header">
                   <div className="recipe-title-section">
                     <h3>{recipe.name}</h3>
@@ -200,41 +213,30 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
                     )}
                   </div>
                   <button
-                    onClick={() => deleteRecipe(recipe.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteRecipe(recipe.id);
+                    }}
                     className="delete-recipe"
+                    title="Delete recipe"
                   >
-                    Delete
+                    🗑️
                   </button>
                 </div>
                 
-                <div className="recipe-content">
-                  <div className="ingredients-section">
-                    <h4>Ingredients:</h4>
-                    <ul>
-                      {recipe.ingredients.map((ingredient, index) => {
-                        // Handle both old string format and new object format for backward compatibility
-                        const ingredientName = typeof ingredient === 'string' ? ingredient : ingredient.name;
-                        const ingredientQuantity = typeof ingredient === 'string' ? '' : ingredient.quantity;
-                        const ingredientUnit = typeof ingredient === 'string' ? '' : ingredient.unit;
-                        
-                        return (
-                          <li key={index} className="">
-                            <div className="ingredient-display">
-                              <span className="ingredient-amount">
-                                {ingredientQuantity && ingredientUnit && (
-                                  <strong>{ingredientQuantity} {ingredientUnit}</strong>
-                                )}
-                              </span>
-                              <span className="ingredient-name">{ingredientName}</span>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                <div className="recipe-preview">
+                  <div className="ingredients-preview">
+                    <h4>Ingredients ({recipe.ingredients?.length || 0}):</h4>
+                    <p className="ingredients-summary">
+                      {recipe.ingredients?.slice(0, 3).map(ingredient => {
+                        const name = typeof ingredient === 'string' ? ingredient : ingredient.name;
+                        return name;
+                      }).join(', ')}
+                      {recipe.ingredients?.length > 3 && '...'}
+                    </p>
                   </div>
-                  <div className="method-section">
-                    <h4>Method:</h4>
-                    <p>{recipe.method}</p>
+                  <div className="click-hint">
+                    <span>Click to view full recipe</span>
                   </div>
                 </div>
               </div>
@@ -379,6 +381,13 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
           </div>
         </div>
       )}
+
+      {/* Recipe Modal */}
+      <RecipeModal 
+        recipe={selectedRecipe}
+        isOpen={showRecipeModal}
+        onClose={closeRecipeModal}
+      />
     </div>
   );
 };
