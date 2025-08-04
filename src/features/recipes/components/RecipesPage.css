@@ -318,6 +318,41 @@
   background-color: #da190b;
 }
 
+/* Cooking Time Input Group Styles */
+.cooking-time-input-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.cooking-time-quantity-input {
+  padding: 0.75rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.cooking-time-quantity-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.cooking-time-unit-select {
+  padding: 0.75rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: white;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.cooking-time-unit-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
 /* Recipe card styles - keep existing but ensure they work in grid */
 .recipe-card {
   background: white;

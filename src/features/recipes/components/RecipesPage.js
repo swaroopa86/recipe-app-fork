@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UNITS } from '../../../shared/constants/units';
+import { TIME_UNITS } from '../../../shared/constants/timeUnits';
 import './RecipesPage.css';
 
 // --- Macros Calculation and API Integration ---
@@ -137,7 +138,10 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
     method: '',
-    cookingTime: ''
+    cookingTime: {
+      quantity: '',
+      unit: 'minutes'
+    }
   });
 
   const [showForm, setShowForm] = useState(false);
@@ -223,11 +227,25 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
     }));
   }, []);
 
-  const handleCookingTimeChange = useCallback((e) => {
+  const handleCookingTimeQuantityChange = useCallback((e) => {
     const value = e.target.value;
     setCurrentRecipe(prev => ({
       ...prev,
-      cookingTime: value
+      cookingTime: {
+        ...prev.cookingTime,
+        quantity: value
+      }
+    }));
+  }, []);
+
+  const handleCookingTimeUnitChange = useCallback((e) => {
+    const value = e.target.value;
+    setCurrentRecipe(prev => ({
+      ...prev,
+      cookingTime: {
+        ...prev.cookingTime,
+        unit: value
+      }
     }));
   }, []);
 
@@ -238,12 +256,13 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
     setSuggestionIndex(null);
 
     const hasValidIngredients = currentRecipe.ingredients.some(ing => ing.name.trim() && ing.quantity.trim());
+    const hasValidCookingTime = currentRecipe.cookingTime.quantity.trim() && parseFloat(currentRecipe.cookingTime.quantity) > 0;
 
     if (
       currentRecipe.name.trim() &&
       hasValidIngredients &&
       currentRecipe.method.trim() &&
-      currentRecipe.cookingTime.trim()
+      hasValidCookingTime
     ) {
       const filteredIngredients = currentRecipe.ingredients.filter(
         ing => ing.name.trim() && ing.quantity.trim()
@@ -313,7 +332,10 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
         name: '',
         ingredients: [{ name: '', quantity: '', unit: 'cups' }],
         method: '',
-        cookingTime: ''
+        cookingTime: {
+          quantity: '',
+          unit: 'minutes'
+        }
       });
       setShowForm(false);
       setIngredientSuggestions([]);
@@ -328,7 +350,10 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
         name: '',
         ingredients: [{ name: '', quantity: '', unit: 'cups' }],
         method: '',
-        cookingTime: ''
+        cookingTime: {
+          quantity: '',
+          unit: 'minutes'
+        }
       });
     }
   }, [showForm]);
@@ -364,7 +389,12 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
                     <div className="recipe-title-section">
                       <h3>{recipe.name}</h3>
                       {recipe.cookingTime && (
-                        <p className="recipe-cooking-time">⏱️ {recipe.cookingTime}</p>
+                        <p className="recipe-cooking-time">
+                          ⏱️ {typeof recipe.cookingTime === 'object'
+                            ? `${recipe.cookingTime.quantity} ${recipe.cookingTime.unit}`
+                            : recipe.cookingTime
+                          }
+                        </p>
                       )}
                     </div>
                     <button
@@ -519,6 +549,34 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
               </div>
 
               <div className="form-group">
+                <label>Cooking Time:</label>
+                <div className="cooking-time-input-group">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={currentRecipe.cookingTime.quantity}
+                    onChange={handleCookingTimeQuantityChange}
+                    placeholder="Time"
+                    className="cooking-time-quantity-input"
+                    required
+                    autoComplete="off"
+                  />
+                  <select
+                    value={currentRecipe.cookingTime.unit}
+                    onChange={handleCookingTimeUnitChange}
+                    className="cooking-time-unit-select"
+                  >
+                    {TIME_UNITS.map(unit => (
+                      <option key={unit} value={unit}>
+                        {unit}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="recipe-method">Method:</label>
                 <textarea
                   id="recipe-method"
@@ -526,19 +584,6 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
                   onChange={handleMethodChange}
                   placeholder="Enter cooking method/instructions"
                   rows="6"
-                  required
-                  autoComplete="off"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="recipe-cooking-time">Cooking Time:</label>
-                <input
-                  id="recipe-cooking-time"
-                  type="text"
-                  value={currentRecipe.cookingTime}
-                  onChange={handleCookingTimeChange}
-                  placeholder="e.g., 1 hour, 30 minutes"
                   required
                   autoComplete="off"
                 />

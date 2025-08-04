@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { detectAllAllergens, getUserAllergenConflicts } from '../../../shared/utils/allergenUtils';
 import './CookingForPage.css';
 
-const CookingForPage = ({ recipes, users, pantryItems }) => {
+const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingList, setShoppingList }) => {
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const selectedUser = useMemo(() => {
     return selectedUserId ? users.find(user => user.id === selectedUserId) : null;
@@ -103,6 +105,150 @@ const CookingForPage = ({ recipes, users, pantryItems }) => {
     return { canMakeNow, missingIngredients };
   }, [safeRecipes, checkIngredientAvailability]);
 
+  // Function to handle selecting a recipe and updating pantry quantities
+  const handleSelectRecipe = (recipe) => {
+    if (!recipe || !recipe.ingredients) return;
+
+    setPantryItems(prevItems => {
+      const updatedItems = [...prevItems];
+      
+      recipe.ingredients.forEach(ingredient => {
+        // Handle both old string format and new object format
+        const ingredientName = typeof ingredient === 'string' ? ingredient : ingredient.name;
+        const requiredQuantity = typeof ingredient === 'string' ? 0 : parseFloat(ingredient.quantity) || 0;
+        const requiredUnit = typeof ingredient === 'string' ? '' : ingredient.unit;
+
+        // Find matching pantry item (case-insensitive partial match)
+        const pantryItemIndex = updatedItems.findIndex(item => 
+          item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
+          ingredientName.toLowerCase().includes(item.name.toLowerCase())
+        );
+
+        if (pantryItemIndex !== -1 && requiredQuantity > 0) {
+          const pantryItem = updatedItems[pantryItemIndex];
+          const availableQuantity = parseFloat(pantryItem.quantity) || 0;
+          
+          // Only subtract if units match and we have enough quantity
+          if (pantryItem.unit === requiredUnit && availableQuantity >= requiredQuantity) {
+            const newQuantity = availableQuantity - requiredQuantity;
+            updatedItems[pantryItemIndex] = {
+              ...pantryItem,
+              quantity: newQuantity.toString()
+            };
+            
+            // Remove item if quantity reaches 0
+            if (newQuantity <= 0) {
+              updatedItems.splice(pantryItemIndex, 1);
+            }
+          }
+        }
+      });
+      
+      return updatedItems;
+    });
+    
+    // Show success message
+    const message = `You have selected ${recipe.name} and your pantry has been updated accordingly`;
+    setSuccessMessage(message);
+    setShowSuccessMessage(true);
+    
+    // Auto-hide message after 4 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+    }, 4000);
+  };
+
+  // Function to handle adding missing ingredients to shopping list
+  const handleAddToShoppingList = (recipe) => {
+    if (!recipe || !recipe.ingredients) return;
+
+    const missingIngredients = [];
+    
+    recipe.ingredients.forEach(ingredient => {
+      // Handle both old string format and new object format
+      const ingredientName = typeof ingredient === 'string' ? ingredient : ingredient.name;
+      const requiredQuantity = typeof ingredient === 'string' ? 0 : parseFloat(ingredient.quantity) || 0;
+      const requiredUnit = typeof ingredient === 'string' ? '' : ingredient.unit;
+
+      // Find matching pantry item (case-insensitive partial match)
+      const pantryItem = pantryItems.find(item => 
+        item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
+        ingredientName.toLowerCase().includes(item.name.toLowerCase())
+      );
+
+      // If ingredient is not in pantry or insufficient quantity, add to shopping list
+      if (!pantryItem) {
+        missingIngredients.push({
+          name: ingredientName,
+          quantity: requiredQuantity || 1,
+          unit: requiredUnit || 'item',
+          recipeSource: recipe.name,
+          id: Date.now() + Math.random()
+        });
+      } else if (requiredQuantity > 0 && pantryItem.unit === requiredUnit) {
+        const availableQuantity = parseFloat(pantryItem.quantity) || 0;
+        if (availableQuantity < requiredQuantity) {
+          const neededQuantity = requiredQuantity - availableQuantity;
+          missingIngredients.push({
+            name: ingredientName,
+            quantity: neededQuantity,
+            unit: requiredUnit,
+            recipeSource: recipe.name,
+            id: Date.now() + Math.random()
+          });
+        }
+      }
+    });
+
+    // Add missing ingredients to shopping list (avoid duplicates)
+    setShoppingList(prevList => {
+      const updatedList = [...prevList];
+      
+      missingIngredients.forEach(newItem => {
+        // More flexible duplicate detection - check for similar names
+        const existingItemIndex = updatedList.findIndex(item => {
+          const existingName = item.name.toLowerCase().trim();
+          const newName = newItem.name.toLowerCase().trim();
+          
+          // Check for exact match or partial match (either direction)
+          return (existingName === newName) ||
+                 (existingName.includes(newName) || newName.includes(existingName)) &&
+                 item.unit === newItem.unit;
+        });
+        
+        if (existingItemIndex !== -1) {
+          // Update quantity and combine recipe sources if item already exists
+          const existingItem = updatedList[existingItemIndex];
+          const existingSources = existingItem.recipeSource.split(', ');
+          const newSources = newItem.recipeSource.split(', ');
+          const combinedSources = [...new Set([...existingSources, ...newSources])].join(', ');
+          
+          updatedList[existingItemIndex] = {
+            ...existingItem,
+            quantity: existingItem.quantity + newItem.quantity,
+            recipeSource: combinedSources
+          };
+        } else {
+          // Add new item only if no similar item exists
+          updatedList.push(newItem);
+        }
+      });
+      
+      return updatedList;
+    });
+
+    // Show success message
+    const itemCount = missingIngredients.length;
+    const message = `Added ${itemCount} missing ingredient${itemCount !== 1 ? 's' : ''} from "${recipe.name}" to your shopping list!`;
+    setSuccessMessage(message);
+    setShowSuccessMessage(true);
+    
+    // Auto-hide message after 4 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+    }, 4000);
+  };
+
   const handleUserSelectionChange = (e) => {
     const userId = e.target.value ? parseInt(e.target.value) : null;
     setSelectedUserId(userId);
@@ -158,6 +304,22 @@ const CookingForPage = ({ recipes, users, pantryItems }) => {
 
   return (
     <div className="cooking-for-container">
+      {/* Success Message Popup */}
+      {showSuccessMessage && (
+        <div className="success-message-popup">
+          <div className="success-message-content">
+            <span className="success-icon">✅</span>
+            <span className="success-text">{successMessage}</span>
+            <button 
+              className="close-message-btn"
+              onClick={() => setShowSuccessMessage(false)}
+              title="Close message"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
       <div className="cooking-for-header">
         <h2>👥 Cooking For</h2>
         <p className="page-description">
@@ -243,6 +405,8 @@ const CookingForPage = ({ recipes, users, pantryItems }) => {
                         recipe={recipe} 
                         selectedUser={selectedUser}
                         canMakeNow={true}
+                        onSelectRecipe={handleSelectRecipe}
+                        onAddToShoppingList={handleAddToShoppingList}
                       />
                     ))}
                   </div>
@@ -263,6 +427,8 @@ const CookingForPage = ({ recipes, users, pantryItems }) => {
                         recipe={recipe} 
                         selectedUser={selectedUser}
                         canMakeNow={false}
+                        onSelectRecipe={handleSelectRecipe}
+                        onAddToShoppingList={handleAddToShoppingList}
                       />
                     ))}
                   </div>
@@ -277,14 +443,19 @@ const CookingForPage = ({ recipes, users, pantryItems }) => {
 };
 
 // Separate component for recipe cards to keep code organized
-const RecipeCard = ({ recipe, selectedUser, canMakeNow }) => {
+const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToShoppingList }) => {
   return (
     <div className={`recipe-card safe-recipe ${canMakeNow ? 'can-make-now' : 'missing-ingredients'}`}>
       <div className="recipe-header">
         <div className="recipe-title-section">
           <h4>{recipe.name}</h4>
           {recipe.cookingTime && (
-            <p className="recipe-cooking-time">⏱️ {recipe.cookingTime}</p>
+            <p className="recipe-cooking-time">
+              ⏱️ {typeof recipe.cookingTime === 'object' 
+                ? `${recipe.cookingTime.quantity} ${recipe.cookingTime.unit}`
+                : recipe.cookingTime
+              }
+            </p>
           )}
           <div className="recipe-badges">
             <div className="safety-badge">
@@ -296,6 +467,26 @@ const RecipeCard = ({ recipe, selectedUser, canMakeNow }) => {
               {canMakeNow ? 'Can make now' : `${recipe.availableCount}/${recipe.totalCount} ingredients`}
             </div>
           </div>
+        </div>
+        <div className="recipe-actions">
+          {canMakeNow && (
+            <button 
+              className="select-recipe-btn"
+              onClick={() => onSelectRecipe(recipe)}
+              title="Select this recipe and update pantry quantities"
+            >
+              <span className="select-icon">✓</span>
+              Select Recipe
+            </button>
+          )}
+          <button 
+            className="add-to-shopping-btn"
+            onClick={() => onAddToShoppingList(recipe)}
+            title={canMakeNow ? "Add ingredients to shopping list for future use" : "Add missing ingredients to shopping list"}
+          >
+            <span className="shopping-icon">🛒</span>
+            {canMakeNow ? "Add to Shopping List" : "Add Missing Items"}
+          </button>
         </div>
       </div>
       

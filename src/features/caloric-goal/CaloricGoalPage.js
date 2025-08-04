@@ -1,10 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './CaloricGoalPage.css';
 
 const CaloricGoalPage = () => {
   const [unitSystem, setUnitSystem] = useState('metric');
+  const [goal, setGoal] = useState('maintain');
+  const [gender, setGender] = useState('male');
+  const [inputs, setInputs] = useState({ weight: '', height: '', age: '' });
   const [caloricGoalResult, setCaloricGoalResult] = useState(null);
-  const [goal, setGoal] = useState('maintain'); // new
+
+  useEffect(() => {
+    if (
+      inputs.weight &&
+      inputs.height &&
+      inputs.age &&
+      !isNaN(inputs.weight) &&
+      !isNaN(inputs.height) &&
+      !isNaN(inputs.age)
+    ) {
+      let weight = parseFloat(inputs.weight);
+      let height = parseFloat(inputs.height);
+      const age = parseFloat(inputs.age);
+
+      if (unitSystem === 'us') {
+        weight = weight * 0.453592;
+        height = height * 2.54;
+      }
+
+      let bmr =
+        10 * weight +
+        6.25 * height -
+        5 * age +
+        (gender === 'male' ? 5 : -161);
+
+      let calories = Math.round(bmr * 1.55);
+
+      if (goal === 'cut') calories = Math.round(calories * 0.8);
+      if (goal === 'bulk') calories = Math.round(calories * 1.15);
+
+      setCaloricGoalResult(calories);
+    } else {
+      setCaloricGoalResult(null);
+    }
+  }, [inputs, goal, unitSystem, gender]);
 
   return (
     <div className="caloric-goal-page-container">
@@ -49,28 +86,27 @@ const CaloricGoalPage = () => {
             Bulking
           </button>
         </div>
+        <div className="goal-toggle" style={{ marginBottom: '1.1rem' }}>
+          <button
+            type="button"
+            className={gender === 'male' ? 'active' : ''}
+            onClick={() => setGender('male')}
+          >
+            Male
+          </button>
+          <button
+            type="button"
+            className={gender === 'female' ? 'active' : ''}
+            onClick={() => setGender('female')}
+          >
+            Female
+          </button>
+        </div>
         <form
           className="caloric-goal-form"
           onSubmit={e => {
             e.preventDefault();
-            let weight = parseFloat(e.target.weight.value);
-            let height = parseFloat(e.target.height.value);
-            const age = parseFloat(e.target.age.value);
-
-            if (unitSystem === 'us') {
-              weight = weight * 0.453592;
-              height = height * 2.54;
-            }
-
-            if (weight && height && age) {
-              const bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-              let calories = Math.round(bmr * 1.55);
-
-              if (goal === 'cut') calories = Math.round(calories * 0.8);
-              if (goal === 'bulk') calories = Math.round(calories * 1.15);
-
-              setCaloricGoalResult(calories);
-            }
+            // Calculation now handled by useEffect
           }}
         >
           <input
@@ -80,6 +116,8 @@ const CaloricGoalPage = () => {
             step="any"
             required
             placeholder={unitSystem === 'metric' ? "Weight (kg)" : "Weight (lb)"}
+            value={inputs.weight}
+            onChange={e => setInputs({ ...inputs, weight: e.target.value })}
           />
           <input
             type="number"
@@ -88,6 +126,8 @@ const CaloricGoalPage = () => {
             step="any"
             required
             placeholder={unitSystem === 'metric' ? "Height (cm)" : "Height (in)"}
+            value={inputs.height}
+            onChange={e => setInputs({ ...inputs, height: e.target.value })}
           />
           <input
             type="number"
@@ -96,6 +136,8 @@ const CaloricGoalPage = () => {
             step="1"
             required
             placeholder="Age"
+            value={inputs.age}
+            onChange={e => setInputs({ ...inputs, age: e.target.value })}
           />
           <button type="submit">Calc</button>
         </form>
