@@ -22,16 +22,6 @@ function App() {
     setCurrentUser(null);
   };
 
-  // If user is not logged in, show login page
-  if (!currentUser) {
-    return (
-      
-      <GoogleOAuthProvider clientId={getDecryptedGoogleClientId()}>
-        <LoginPage onLogin={handleLogin} />
-      </GoogleOAuthProvider>
-    );
-  }
-
   const refreshRecipes = useCallback(async () => {
     const data = await fetchRecipes();
     setRecipes(data);
@@ -50,13 +40,22 @@ function App() {
     setPantryItems(data);
   }, []);
 
-
-
   useEffect(() => {
-    refreshRecipes();
-    refreshUsers();
-    refreshPantryItems();
-  }, [refreshRecipes, refreshUsers, refreshPantryItems]);
+    if (currentUser) {
+      refreshRecipes();
+      refreshUsers();
+      refreshPantryItems();
+    }
+  }, [currentUser, refreshRecipes, refreshUsers, refreshPantryItems]);
+
+  // If user is not logged in, show login page
+  if (!currentUser) {
+    return (
+      <GoogleOAuthProvider clientId={getDecryptedGoogleClientId()}>
+        <LoginPage onLogin={handleLogin} />
+      </GoogleOAuthProvider>
+    );
+  }
 
   return (
     <div className="App">
