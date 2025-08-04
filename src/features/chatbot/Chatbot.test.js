@@ -18,7 +18,7 @@ describe('Chatbot Component', () => {
     render(<Chatbot messages={[]} setMessages={mockSetMessages} />);
     
     // Check for the actual chatbot elements that exist
-    expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ask me anything...')).toBeInTheDocument();
     expect(screen.getByText('Send')).toBeInTheDocument();
   });
 
@@ -43,7 +43,7 @@ describe('Chatbot Component', () => {
   test('shows message input', () => {
     render(<Chatbot messages={[]} setMessages={mockSetMessages} />);
     
-    expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ask me anything...')).toBeInTheDocument();
   });
 
   test('shows send button', () => {
@@ -56,7 +56,7 @@ describe('Chatbot Component', () => {
     render(<Chatbot messages={initialMessages} setMessages={mockSetMessages} />);
     
     // Check for the actual UI elements that exist
-    expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ask me anything...')).toBeInTheDocument();
     expect(screen.getByText('Send')).toBeInTheDocument();
   });
 });

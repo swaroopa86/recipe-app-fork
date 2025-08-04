@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { detectAllAllergens, getUserAllergenConflicts } from '../../../shared/utils/allergenUtils';
+import { convertUnits, areUnitsCompatible, formatQuantity } from '../../../utils/unitConversion';
+import RecipeModal from '../../recipes/components/RecipeModal';
 import './CookingForPage.css';
 
 const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingList, setShoppingList }) => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
 
   const selectedUser = useMemo(() => {
     return selectedUserId ? users.find(user => user.id === selectedUserId) : null;
@@ -109,6 +113,9 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
   const handleSelectRecipe = (recipe) => {
     if (!recipe || !recipe.ingredients) return;
 
+    let updatedItemsCount = 0;
+    let conversionErrors = [];
+
     setPantryItems(prevItems => {
       const updatedItems = [...prevItems];
       
@@ -118,28 +125,54 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
         const requiredQuantity = typeof ingredient === 'string' ? 0 : parseFloat(ingredient.quantity) || 0;
         const requiredUnit = typeof ingredient === 'string' ? '' : ingredient.unit;
 
+        if (requiredQuantity <= 0) return; // Skip ingredients without quantity
+
         // Find matching pantry item (case-insensitive partial match)
         const pantryItemIndex = updatedItems.findIndex(item => 
           item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
           ingredientName.toLowerCase().includes(item.name.toLowerCase())
         );
 
-        if (pantryItemIndex !== -1 && requiredQuantity > 0) {
+        if (pantryItemIndex !== -1) {
           const pantryItem = updatedItems[pantryItemIndex];
           const availableQuantity = parseFloat(pantryItem.quantity) || 0;
           
-          // Only subtract if units match and we have enough quantity
-          if (pantryItem.unit === requiredUnit && availableQuantity >= requiredQuantity) {
-            const newQuantity = availableQuantity - requiredQuantity;
-            updatedItems[pantryItemIndex] = {
-              ...pantryItem,
-              quantity: newQuantity.toString()
-            };
+          try {
+            let quantityToSubtract = requiredQuantity;
             
-            // Remove item if quantity reaches 0
-            if (newQuantity <= 0) {
-              updatedItems.splice(pantryItemIndex, 1);
+            // Convert units if they don't match
+            if (pantryItem.unit !== requiredUnit) {
+              if (areUnitsCompatible(requiredUnit, pantryItem.unit)) {
+                // Convert required quantity to pantry unit
+                quantityToSubtract = convertUnits(
+                  requiredQuantity, 
+                  requiredUnit, 
+                  pantryItem.unit, 
+                  ingredientName
+                );
+              } else {
+                conversionErrors.push(`Cannot convert ${requiredUnit} to ${pantryItem.unit} for ${ingredientName}`);
+                return; // Skip this ingredient
+              }
             }
+            
+            // Check if we have enough quantity (with small tolerance for floating point)
+            if (availableQuantity >= quantityToSubtract - 0.001) {
+              const newQuantity = Math.max(0, availableQuantity - quantityToSubtract);
+              updatedItems[pantryItemIndex] = {
+                ...pantryItem,
+                quantity: formatQuantity(newQuantity)
+              };
+              
+              updatedItemsCount++;
+              
+              // Remove item if quantity reaches 0 or very close to 0
+              if (newQuantity < 0.001) {
+                updatedItems.splice(pantryItemIndex, 1);
+              }
+            }
+          } catch (error) {
+            conversionErrors.push(`Error converting units for ${ingredientName}: ${error.message}`);
           }
         }
       });
@@ -147,65 +180,89 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
       return updatedItems;
     });
     
-    // Show success message
-    const message = `You have selected ${recipe.name} and your pantry has been updated accordingly`;
+    // Show success message with detailed feedback
+    let message = `You have selected "${recipe.name}"`;
+    
+    if (updatedItemsCount > 0) {
+      message += ` and updated ${updatedItemsCount} pantry item${updatedItemsCount !== 1 ? 's' : ''} with unit conversion.`;
+    } else {
+      message += `, but no pantry items were updated.`;
+    }
+    
+    if (conversionErrors.length > 0) {
+      message += ` Note: ${conversionErrors.length} ingredient${conversionErrors.length !== 1 ? 's' : ''} could not be converted.`;
+      console.warn('Unit conversion errors:', conversionErrors);
+    }
+    
     setSuccessMessage(message);
     setShowSuccessMessage(true);
     
-    // Auto-hide message after 4 seconds
+    // Auto-hide message after 5 seconds (longer for more detailed message)
     setTimeout(() => {
       setShowSuccessMessage(false);
-    }, 4000);
+    }, 5000);
   };
 
-  // Function to handle adding missing ingredients to shopping list
-  const handleAddToShoppingList = (recipe) => {
+  // Function to handle adding ingredients to shopping list
+  const handleAddToShoppingList = (recipe, canMakeNow = false) => {
     if (!recipe || !recipe.ingredients) return;
 
-    const missingIngredients = [];
+    const ingredientsToAdd = [];
     
     recipe.ingredients.forEach(ingredient => {
       // Handle both old string format and new object format
       const ingredientName = typeof ingredient === 'string' ? ingredient : ingredient.name;
-      const requiredQuantity = typeof ingredient === 'string' ? 0 : parseFloat(ingredient.quantity) || 0;
-      const requiredUnit = typeof ingredient === 'string' ? '' : ingredient.unit;
+      const requiredQuantity = typeof ingredient === 'string' ? 1 : parseFloat(ingredient.quantity) || 1;
+      const requiredUnit = typeof ingredient === 'string' ? 'item' : ingredient.unit || 'item';
 
-      // Find matching pantry item (case-insensitive partial match)
-      const pantryItem = pantryItems.find(item => 
-        item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
-        ingredientName.toLowerCase().includes(item.name.toLowerCase())
-      );
-
-      // If ingredient is not in pantry or insufficient quantity, add to shopping list
-      if (!pantryItem) {
-        missingIngredients.push({
+      if (canMakeNow) {
+        // For "Can Make Now" recipes, add ALL ingredients to shopping list
+        ingredientsToAdd.push({
           name: ingredientName,
-          quantity: requiredQuantity || 1,
-          unit: requiredUnit || 'item',
+          quantity: requiredQuantity,
+          unit: requiredUnit,
           recipeSource: recipe.name,
           id: Date.now() + Math.random()
         });
-      } else if (requiredQuantity > 0 && pantryItem.unit === requiredUnit) {
-        const availableQuantity = parseFloat(pantryItem.quantity) || 0;
-        if (availableQuantity < requiredQuantity) {
-          const neededQuantity = requiredQuantity - availableQuantity;
-          missingIngredients.push({
+      } else {
+        // For "Need Items" recipes, only add missing or insufficient ingredients
+        // Find matching pantry item (case-insensitive partial match)
+        const pantryItem = pantryItems.find(item => 
+          item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
+          ingredientName.toLowerCase().includes(item.name.toLowerCase())
+        );
+
+        // If ingredient is not in pantry or insufficient quantity, add to shopping list
+        if (!pantryItem) {
+          ingredientsToAdd.push({
             name: ingredientName,
-            quantity: neededQuantity,
+            quantity: requiredQuantity,
             unit: requiredUnit,
             recipeSource: recipe.name,
             id: Date.now() + Math.random()
           });
+        } else if (requiredQuantity > 0 && pantryItem.unit === requiredUnit) {
+          const availableQuantity = parseFloat(pantryItem.quantity) || 0;
+          if (availableQuantity < requiredQuantity) {
+            const neededQuantity = requiredQuantity - availableQuantity;
+            ingredientsToAdd.push({
+              name: ingredientName,
+              quantity: neededQuantity,
+              unit: requiredUnit,
+              recipeSource: recipe.name,
+              id: Date.now() + Math.random()
+            });
+          }
         }
       }
     });
 
-    // Add missing ingredients to shopping list (avoid duplicates)
+    // Add ingredients to shopping list (avoid duplicates)
     setShoppingList(prevList => {
       const updatedList = [...prevList];
       
-      missingIngredients.forEach(newItem => {
-        // More flexible duplicate detection - check for similar names
+      ingredientsToAdd.forEach(newItem => {
+        // Check for existing items with similar names
         const existingItemIndex = updatedList.findIndex(item => {
           const existingName = item.name.toLowerCase().trim();
           const newName = newItem.name.toLowerCase().trim();
@@ -215,7 +272,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
                  ((existingName.includes(newName) || newName.includes(existingName)) &&
                  item.unit === newItem.unit);
         });
-        
+
         if (existingItemIndex !== -1) {
           // Update quantity and combine recipe sources if item already exists
           const existingItem = updatedList[existingItemIndex];
@@ -229,7 +286,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
             recipeSource: combinedSources
           };
         } else {
-          // Add new item only if no similar item exists
+          // Add new item
           updatedList.push(newItem);
         }
       });
@@ -237,9 +294,21 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
       return updatedList;
     });
 
-    // Show success message
-    const itemCount = missingIngredients.length;
-    const message = `Added ${itemCount} missing ingredient${itemCount !== 1 ? 's' : ''} from "${recipe.name}" to your shopping list!`;
+    // Show appropriate success message based on what was added
+    const itemCount = ingredientsToAdd.length;
+    let message;
+    
+    if (canMakeNow) {
+      // For "Can Make Now" recipes, all ingredients were added
+      message = `Added all ${itemCount} ingredient${itemCount !== 1 ? 's' : ''} from "${recipe.name}" to your shopping list!`;
+    } else if (itemCount === 0) {
+      // For "Need Items" recipes where all ingredients are available in pantry
+      message = `All ingredients for "${recipe.name}" are already available in your pantry! No items added to shopping list.`;
+    } else {
+      // For "Need Items" recipes where some ingredients were missing and added
+      message = `Added ${itemCount} missing ingredient${itemCount !== 1 ? 's' : ''} from "${recipe.name}" to your shopping list!`;
+    }
+    
     setSuccessMessage(message);
     setShowSuccessMessage(true);
     
@@ -252,6 +321,16 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
   const handleUserSelectionChange = (e) => {
     const userId = e.target.value ? parseInt(e.target.value) : null;
     setSelectedUserId(userId);
+  };
+
+  const openRecipeModal = (recipe) => {
+    setSelectedRecipe(recipe);
+    setShowRecipeModal(true);
+  };
+
+  const closeRecipeModal = () => {
+    setShowRecipeModal(false);
+    setSelectedRecipe(null);
   };
 
   if (users.length === 0) {
@@ -407,6 +486,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
                         canMakeNow={true}
                         onSelectRecipe={handleSelectRecipe}
                         onAddToShoppingList={handleAddToShoppingList}
+                        onOpenRecipeModal={openRecipeModal}
                       />
                     ))}
                   </div>
@@ -429,6 +509,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
                         canMakeNow={false}
                         onSelectRecipe={handleSelectRecipe}
                         onAddToShoppingList={handleAddToShoppingList}
+                        onOpenRecipeModal={openRecipeModal}
                       />
                     ))}
                   </div>
@@ -438,14 +519,25 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
           )}
         </div>
       )}
+
+      {/* Recipe Modal */}
+      <RecipeModal 
+        recipe={selectedRecipe}
+        isOpen={showRecipeModal}
+        onClose={closeRecipeModal}
+        pantryItems={pantryItems}
+      />
     </div>
   );
 };
 
 // Separate component for recipe cards to keep code organized
-const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToShoppingList }) => {
+const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToShoppingList, onOpenRecipeModal }) => {
   return (
-    <div className={`recipe-card safe-recipe ${canMakeNow ? 'can-make-now' : 'missing-ingredients'}`}>
+    <div 
+      className={`recipe-card safe-recipe ${canMakeNow ? 'can-make-now' : 'missing-ingredients'} clickable-recipe`}
+      onClick={() => onOpenRecipeModal(recipe)}
+    >
       <div className="recipe-header">
         <div className="recipe-title-section">
           <h4>{recipe.name}</h4>
@@ -472,7 +564,10 @@ const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToS
           {canMakeNow && (
             <button 
               className="select-recipe-btn"
-              onClick={() => onSelectRecipe(recipe)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectRecipe(recipe);
+              }}
               title="Select this recipe and update pantry quantities"
             >
               <span className="select-icon">✓</span>
@@ -481,8 +576,11 @@ const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToS
           )}
           <button 
             className="add-to-shopping-btn"
-            onClick={() => onAddToShoppingList(recipe)}
-            title={canMakeNow ? "Add ingredients to shopping list for future use" : "Add missing ingredients to shopping list"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToShoppingList(recipe, canMakeNow);
+            }}
+            title={canMakeNow ? "Add all ingredients to shopping list for future use" : "Add missing ingredients to shopping list"}
           >
             <span className="shopping-icon">🛒</span>
             {canMakeNow ? "Add to Shopping List" : "Add Missing Items"}
@@ -491,50 +589,14 @@ const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToS
       </div>
       
       <div className="recipe-content">
-        <div className="ingredients-section">
-          <h5>Ingredients:</h5>
-          <ul>
-            {recipe.ingredientChecks.map((item, index) => {
-              const ingredient = item.ingredient;
-              const check = item.check;
-              
-              // Handle both old string format and new object format
-              const ingredientName = typeof ingredient === 'string' ? ingredient : ingredient.name;
-              const ingredientQuantity = typeof ingredient === 'string' ? '' : ingredient.quantity;
-              const ingredientUnit = typeof ingredient === 'string' ? '' : ingredient.unit;
-              
-              const allergens = detectAllAllergens(ingredientName);
-              return (
-                <li key={index} className={`ingredient-item ${check.available ? 'available' : 'unavailable'}`}>
-                  <div className="ingredient-display">
-                    <span className="ingredient-amount">
-                      {ingredientQuantity && ingredientUnit && (
-                        <strong>{ingredientQuantity} {ingredientUnit}</strong>
-                      )}
-                    </span>
-                    <span className="ingredient-name">{ingredientName}</span>
-                    <span className={`availability-status ${check.available ? 'available' : 'unavailable'}`}>
-                      <span className="status-icon">{check.available ? '✅' : '❌'}</span>
-                      <span className="status-text">{check.reason}</span>
-                    </span>
-                  </div>
-                  {allergens.length > 0 && (
-                    <span className="general-allergen-tags">
-                      {allergens.map(allergen => (
-                        <span key={allergen} className="general-allergen-tag">
-                          {allergen}
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-        <div className="method-section">
-          <h5>Method:</h5>
-          <p>{recipe.method}</p>
+        <div className="recipe-summary">
+          <p className="recipe-description">
+            {canMakeNow ? 
+              '✅ All ingredients available in your pantry' : 
+              '🛒 Some ingredients need to be purchased'
+            }
+          </p>
+          <p className="click-hint">Click to view full recipe details</p>
         </div>
       </div>
     </div>

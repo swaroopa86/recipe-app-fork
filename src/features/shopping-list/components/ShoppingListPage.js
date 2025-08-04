@@ -57,27 +57,14 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
   const purchasedItems = shoppingList.filter(item => item.purchased).length;
   const remainingItems = totalItems - purchasedItems;
 
-  // Group items by recipe source for better organization
-  // For items from multiple recipes, show them in a "Multiple Recipes" group
-  const groupedItems = shoppingList.reduce((groups, item) => {
-    const sources = item.recipeSource ? item.recipeSource.split(', ') : ['Other'];
-    
-    if (sources.length > 1) {
-      // Item from multiple recipes - put in "Multiple Recipes" group
-      if (!groups['Multiple Recipes']) {
-        groups['Multiple Recipes'] = [];
-      }
-      groups['Multiple Recipes'].push(item);
-    } else {
-      // Item from single recipe or manual entry
-      const source = sources[0];
-      if (!groups[source]) {
-        groups[source] = [];
-      }
-      groups[source].push(item);
-    }
-    return groups;
-  }, {});
+  // Group items into only 2 categories: Manual Entry and Recipe items
+  const manualItems = shoppingList.filter(item => 
+    !item.recipeSource || item.recipeSource === 'Manual Entry' || item.recipeSource === 'Other'
+  );
+  
+  const recipeItems = shoppingList.filter(item => 
+    item.recipeSource && item.recipeSource !== 'Manual Entry' && item.recipeSource !== 'Other'
+  );
 
   // Handle item updates
   const updateItem = useCallback((itemId, updates) => {
@@ -137,14 +124,6 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
             <span className="stat-number">{totalItems}</span>
             <span className="stat-label">Total Items</span>
           </div>
-          <div className="stat-item">
-            <span className="stat-number">{remainingItems}</span>
-            <span className="stat-label">Remaining</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">{purchasedItems}</span>
-            <span className="stat-label">Purchased</span>
-          </div>
         </div>
 
         {/* Action Buttons */}
@@ -203,15 +182,20 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
           </div>
         ) : (
           <div className="shopping-groups">
-            {Object.entries(groupedItems).map(([source, items]) => (
-              <div key={source} className="shopping-group">
-                <h4 className="group-title">
-                  <span className="recipe-icon">📝</span>
-                  {source}
-                  <span className="item-count">({items.length} item{items.length !== 1 ? 's' : ''})</span>
-                </h4>
-                <div className="shopping-items">
-                  {items.map(item => (
+            {/* Manual Entry Section */}
+            <div className="shopping-group">
+              <h4 className="group-title">
+                <span className="recipe-icon">✏️</span>
+                Manual Entry
+                <span className="item-count">({manualItems.length} item{manualItems.length !== 1 ? 's' : ''})</span>
+              </h4>
+              <div className="shopping-items">
+                {manualItems.length === 0 ? (
+                  <div className="empty-section">
+                    <p>No items added yet. Click "Add Item" to add ingredients manually.</p>
+                  </div>
+                ) : (
+                  manualItems.map(item => (
                     <ShoppingItemCard
                       key={item.id}
                       item={item}
@@ -223,10 +207,40 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
                       onDelete={deleteItem}
                       onTogglePurchased={togglePurchased}
                     />
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
-            ))}
+            </div>
+
+            {/* Recipe Items Section */}
+            <div className="shopping-group">
+              <h4 className="group-title">
+                <span className="recipe-icon">🍳</span>
+                From Recipes
+                <span className="item-count">({recipeItems.length} item{recipeItems.length !== 1 ? 's' : ''})</span>
+              </h4>
+              <div className="shopping-items">
+                {recipeItems.length === 0 ? (
+                  <div className="empty-section">
+                    <p>No recipe ingredients added yet. Add ingredients from recipes in the "Cooking For" section.</p>
+                  </div>
+                ) : (
+                  recipeItems.map(item => (
+                    <ShoppingItemCard
+                      key={item.id}
+                      item={item}
+                      isEditing={editingId === item.id}
+                      onEdit={() => setEditingId(item.id)}
+                      onSave={() => setEditingId(null)}
+                      onCancel={() => setEditingId(null)}
+                      onUpdate={updateItem}
+                      onDelete={deleteItem}
+                      onTogglePurchased={togglePurchased}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
