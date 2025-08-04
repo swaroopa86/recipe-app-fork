@@ -20,8 +20,8 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
           const itemName = item.name.toLowerCase().trim();
           
           return (existingName === itemName) ||
-                 (existingName.includes(itemName) || itemName.includes(existingName)) &&
-                 existing.unit === item.unit;
+                 ((existingName.includes(itemName) || itemName.includes(existingName)) &&
+                 existing.unit === item.unit);
         });
         
         if (existingIndex !== -1) {

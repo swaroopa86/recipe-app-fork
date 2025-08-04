@@ -212,8 +212,8 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
           
           // Check for exact match or partial match (either direction)
           return (existingName === newName) ||
-                 (existingName.includes(newName) || newName.includes(existingName)) &&
-                 item.unit === newItem.unit;
+                 ((existingName.includes(newName) || newName.includes(existingName)) &&
+                 item.unit === newItem.unit);
         });
         
         if (existingItemIndex !== -1) {

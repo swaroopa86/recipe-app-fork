@@ -49,7 +49,7 @@ function LoginPage({ onLogin }) {
             <h2>Welcome Back!</h2>
             <p>Sign in with your Google account to continue</p>
             
-            <div className="google-login-container">
+            <div className="google-login-container" data-testid="google-login-container">
               <GoogleLogin
                 onSuccess={handleSuccess}
                 onError={handleError}
