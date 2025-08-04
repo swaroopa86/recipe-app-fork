@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useLocalStorage, userSerializer } from '../shared';
 import { RecipesPage, UsersPage, PantryPage, CookingForPage } from '../features';
+import CaloricGoalPage from '../features/caloric-goal/CaloricGoalPage';
 import './App.css';
 
 function App() {
   const [recipes, setRecipes] = useLocalStorage('recipes', []);
   const [users, setUsers] = useLocalStorage('users', [], userSerializer);
   const [pantryItems, setPantryItems] = useLocalStorage('pantryItems', []);
-  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', or 'cooking-for'
+  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'caloric-goal'
 
   return (
     <div className="App">
@@ -48,6 +49,13 @@ function App() {
               <span className="users-badge">{users.length}</span>
             )}
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'caloric-goal' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('caloric-goal')}
+          >
+            <span className="nav-icon">🔥</span>
+            Caloric Goal
+          </button>
         </nav>
       </header>
 
@@ -63,6 +71,9 @@ function App() {
         )}
         {currentPage === 'users' && (
           <UsersPage users={users} setUsers={setUsers} />
+        )}
+        {currentPage === 'caloric-goal' && (
+          <CaloricGoalPage />
         )}
       </main>
     </div>
