@@ -222,6 +222,74 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.safe-recipe-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+  position: relative;
+  overflow: hidden;
+}
+
+.recipe-card.clickable-recipe {
+  cursor: pointer;
+}
+
+.recipe-card.clickable-recipe:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
+}
+
+.recipe-card.clickable-recipe:active {
+  transform: translateY(-2px);
+}
+
+.recipe-card.clickable-recipe::after {
+  content: 'Click to view full recipe';
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.recipe-card.clickable-recipe:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.recipe-summary {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.recipe-description {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.click-hint {
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+  margin: 0;
+}
+
 .can-make-now {
   border: 2px solid #4CAF50;
   background: linear-gradient(135deg, #f8fff8 0%, #f0f8f0 100%);

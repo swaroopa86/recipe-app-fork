@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UNITS } from '../../../shared/constants/units';
 import { TIME_UNITS } from '../../../shared/constants/timeUnits';
+import RecipeModal from './RecipeModal';
 import './RecipesPage.css';
 
 // --- Macros Calculation and API Integration ---
@@ -149,6 +150,8 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
   const [error, setError] = useState('');
   const [ingredientSuggestions, setIngredientSuggestions] = useState([]);
   const [suggestionIndex, setSuggestionIndex] = useState(null);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
 
   useEffect(() => {
     async function fetchAllMacros() {
@@ -358,6 +361,16 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
     }
   }, [showForm]);
 
+  const openRecipeModal = useCallback((recipe) => {
+    setSelectedRecipe(recipe);
+    setShowRecipeModal(true);
+  }, []);
+
+  const closeRecipeModal = useCallback(() => {
+    setShowRecipeModal(false);
+    setSelectedRecipe(null);
+  }, []);
+
   const deleteRecipe = useCallback((id) => {
     setRecipes(prev => prev.filter(recipe => recipe.id !== id));
   }, [setRecipes]);
@@ -384,7 +397,7 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
             {recipes.map((recipe) => {
               const macros = macrosByRecipe[recipe.id] || { calories: 0, protein: 0, carbs: 0, fat: 0 };
               return (
-                <div key={recipe.id} className="recipe-card">
+                <div key={recipe.id} className="recipe-card" onClick={() => openRecipeModal(recipe)}>
                   <div className="recipe-header">
                     <div className="recipe-title-section">
                       <h3>{recipe.name}</h3>
@@ -398,10 +411,14 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
                       )}
                     </div>
                     <button
-                      onClick={() => deleteRecipe(recipe.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteRecipe(recipe.id);
+                      }}
                       className="delete-recipe"
+                      title="Delete recipe"
                     >
-                      Delete
+                      🗑️
                     </button>
                   </div>
                   
@@ -638,6 +655,13 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
           </div>
         </div>
       )}
+
+      {/* Recipe Modal */}
+      <RecipeModal 
+        recipe={selectedRecipe}
+        isOpen={showRecipeModal}
+        onClose={closeRecipeModal}
+      />
     </div>
   );
 };

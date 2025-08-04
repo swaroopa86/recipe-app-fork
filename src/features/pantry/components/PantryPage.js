@@ -151,7 +151,7 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
       setSelectedItems(new Set());
       setShowSuccessMessage(false);
 
-      const text = await handleImageUpload(file, (extractedText) => {
+      await handleImageUpload(file, (extractedText) => {
         setReceiptText(extractedText);
         const items = parseReceiptText(extractedText);
         setParsedItems(items);
