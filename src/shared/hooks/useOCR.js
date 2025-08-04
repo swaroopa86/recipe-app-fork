@@ -38,9 +38,13 @@ export const useOCR = () => {
 
       // Set parameters optimized for receipt text
       await worker.setParameters({
-        'tessedit_char_whitelist': '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz $.,@/():-#&',
+        'tessedit_char_whitelist': '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz $.,£@/():-#&%',
         'tessedit_pageseg_mode': '6', // Uniform block of text
-        'preserve_interword_spaces': '1'
+        'preserve_interword_spaces': '1',
+        'tessedit_do_invert': '0', // Don't invert black/white
+        'classify_bln_numeric_mode': '0', // Better for mixed text/numbers
+        'user_defined_dpi': '300', // Higher DPI for better accuracy
+        'tessedit_ocr_engine_mode': '1' // Use LSTM neural network engine
       });
 
       console.log('OCR worker configured, starting recognition...');

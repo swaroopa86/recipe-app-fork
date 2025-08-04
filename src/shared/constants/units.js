@@ -20,5 +20,9 @@ export const SKIP_LINES = [
   'CASHIER', 'REGISTER', 'TRANSACTION', 'DATE', 'TIME', 'STORE #',
   'REWARDS', 'SAVINGS', 'DISCOUNT', 'COUPON', 'REFUND', 'TENDER',
   'WELCOME', 'VISIT', 'SURVEY', 'FEEDBACK', 'BARCODE', 'SCAN',
-  'CUSTOMER', 'MEMBER', 'ACCOUNT', 'POINTS', 'MILES', 'FUEL'
+  'CUSTOMER', 'MEMBER', 'ACCOUNT', 'POINTS', 'MILES', 'FUEL',
+  'ASDA', 'STORES LTD', 'MANAGER', 'RECALL FROM', 'CONTACTLESS', 'VERIFIED',
+  'PAYMENT APPROVED', 'SALE', 'GBPS', 'Visa Credit', 'TRX ID', 'MID',
+  'TID', 'PLEASE KEEP', 'Shop online', 'delivery', 'collection', 'For a chance',
+  'tell us how we did', 'ITEMS SOLD', 'WIN £1,000'
 ]; 

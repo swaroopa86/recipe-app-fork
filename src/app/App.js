@@ -7,7 +7,7 @@ function App() {
   const [recipes, setRecipes] = useLocalStorage('recipes', []);
   const [users, setUsers] = useLocalStorage('users', [], userSerializer);
   const [pantryItems, setPantryItems] = useLocalStorage('pantryItems', []);
-  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', or 'cooking-for'
+  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for'
 
   return (
     <div className="App">
@@ -48,6 +48,7 @@ function App() {
               <span className="users-badge">{users.length}</span>
             )}
           </button>
+
         </nav>
       </header>
 
@@ -64,6 +65,7 @@ function App() {
         {currentPage === 'users' && (
           <UsersPage users={users} setUsers={setUsers} />
         )}
+
       </main>
     </div>
   );
