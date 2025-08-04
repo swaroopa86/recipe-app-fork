@@ -4,9 +4,10 @@ import ReceiptScannerModal from './ReceiptScannerModal';
 import PantryItemCard from './PantryItemCard';
 import { useOCR } from '../../../shared/hooks/useOCR';
 import { parseReceiptText } from '../../../shared/utils/receiptParser';
+import { createPantryItem, updatePantryItem, deletePantryItem, fetchPantryItems } from '../../../shared/api';
 import './PantryPage.css';
 
-const PantryPage = ({ pantryItems, setPantryItems }) => {
+const PantryPage = ({ pantryItems, refreshPantryItems }) => {
   // Item management state
   const [currentItem, setCurrentItem] = useState({
     name: '',
@@ -52,30 +53,32 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
     setCurrentItem(prev => ({ ...prev, unit: e.target.value }));
   }, []);
 
-  const handleSubmit = useCallback((e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (currentItem.name.trim() && currentItem.quantity.trim()) {
-      if (editingId) {
-        // Update existing item
-        setPantryItems(prev => prev.map(item => 
-          item.id === editingId 
-            ? { ...currentItem, id: editingId }
-            : item
-        ));
-        setEditingId(null);
-      } else {
-        // Add new item
-        const newItem = {
-          ...currentItem,
-          id: Date.now()
-        };
-        setPantryItems(prev => [...prev, newItem]);
+      try {
+        if (editingId) {
+          // Update existing item
+          await updatePantryItem({ ...currentItem, id: editingId });
+          setEditingId(null);
+        } else {
+          // Add new item
+          const newItem = {
+            ...currentItem,
+            id: Date.now().toString()
+          };
+          await createPantryItem(newItem);
+        }
+        refreshPantryItems(); // Refresh pantry items after creation/update
+      } catch (error) {
+        console.error('Error saving pantry item:', error);
+        alert('Failed to save pantry item. Please try again.');
       }
       
       resetCurrentItem();
       setShowAddForm(false);
     }
-  }, [currentItem, editingId, setPantryItems]);
+  }, [currentItem, editingId, refreshPantryItems]);
 
   const resetCurrentItem = useCallback(() => {
     setCurrentItem({ name: '', quantity: '', unit: 'cups' });
@@ -92,15 +95,41 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
     setShowAddForm(true);
   }, []);
 
-  const deleteItem = useCallback((id) => {
-    setPantryItems(prev => prev.filter(item => item.id !== id));
-  }, [setPantryItems]);
-
-  const clearPantry = useCallback(() => {
-    if (window.confirm('Are you sure you want to clear your entire pantry? This action cannot be undone.')) {
-      setPantryItems([]);
+  const deleteItem = useCallback(async (id) => {
+    try {
+      await deletePantryItem(id);
+      refreshPantryItems(); // Refresh pantry items after deletion
+    } catch (error) {
+      console.error('Error deleting pantry item:', error);
+      alert('Failed to delete pantry item. Please try again.');
     }
-  }, [setPantryItems]);
+  }, [refreshPantryItems]);
+
+  const clearPantry = useCallback(async () => {
+    if (window.confirm('Are you sure you want to clear your entire pantry? This action cannot be undone.')) {
+      try {
+        // Fetch all pantry items and delete them one by one
+        // This is not ideal for very large datasets, but works for now
+        const allItems = await fetchPantryItems();
+        for (const item of allItems) {
+          await deletePantryItem(item.id);
+        }
+        refreshPantryItems(); // Refresh after clearing
+      } catch (error) {
+        console.error('Error clearing pantry:', error);
+        alert('Failed to clear pantry. Please try again.');
+      }
+    }
+  }, [refreshPantryItems]);
+
+  // Image clear handler (move above all usages)
+  const handleClearImage = useCallback(() => {
+    clearImage();
+    setReceiptText('');
+    setParsedItems([]);
+    setSelectedItems(new Set());
+    setShowSuccessMessage(false);
+  }, [clearImage]);
 
   // Modal control functions
   const toggleAddForm = useCallback(() => {
@@ -113,14 +142,13 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
   const toggleReceiptForm = useCallback(() => {
     setShowReceiptForm(prev => !prev);
     if (showReceiptForm) {
-      // Clear receipt form when closing
+      // Clear the parsed items but keep the form open for more scanning
       setReceiptText('');
       setParsedItems([]);
       setSelectedItems(new Set());
-      clearImage();
-      setShowSuccessMessage(false);
+      handleClearImage();
     }
-  }, [showReceiptForm, clearImage]);
+  }, [parsedItems, selectedItems, pantryItems, refreshPantryItems, handleClearImage, updatePantryItem, createPantryItem]);
 
   // Receipt text handling
   const handleReceiptTextChange = useCallback((e) => {
@@ -163,14 +191,7 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
     }
   }, [handleImageUpload, updateStatus]);
 
-  const handleClearImage = useCallback(() => {
-    clearImage();
-    setReceiptText('');
-    setParsedItems([]);
-    setSelectedItems(new Set());
-    setShowSuccessMessage(false);
-  }, [clearImage]);
-
+  
   // Item selection handlers
   const toggleItemSelection = useCallback((itemId) => {
     setSelectedItems(prev => {
@@ -210,7 +231,7 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
   }, []);
 
   // Save items to pantry
-  const addSelectedItemsToPantry = useCallback(() => {
+  const addSelectedItemsToPantry = useCallback(async () => {
     const itemsToAdd = parsedItems.filter(item => selectedItems.has(item.id));
     
     console.log('Save button clicked!');
@@ -222,72 +243,41 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
       console.log('No items selected');
       return;
     }
-    
     let addedCount = 0;
     let updatedCount = 0;
-    
-    // Merge with existing pantry items (combine quantities if same name and unit)
-    setPantryItems(prev => {
-      console.log('Previous pantry items:', prev);
-      const newItems = [...prev];
-      
-      itemsToAdd.forEach(receiptItem => {
-        console.log('Processing item:', receiptItem);
-        const existingIndex = newItems.findIndex(
-          item => item.name.toLowerCase() === receiptItem.name.toLowerCase() && 
-                 item.unit === receiptItem.unit
-        );
-        
-        if (existingIndex !== -1) {
-          // Add to existing item
-          const existingQuantity = parseFloat(newItems[existingIndex].quantity);
-          const newQuantity = parseFloat(receiptItem.quantity);
-          newItems[existingIndex] = {
-            ...newItems[existingIndex],
-            quantity: (existingQuantity + newQuantity).toString()
-          };
-          updatedCount++;
-          console.log('Updated existing item:', newItems[existingIndex]);
-        } else {
-          // Add as new item
-          const newPantryItem = {
-            ...receiptItem,
-            id: Date.now() + Math.random() // Ensure unique ID
-          };
-          newItems.push(newPantryItem);
-          addedCount++;
-          console.log('Added new item:', newPantryItem);
-        }
-      });
-      
-      console.log('Final pantry items:', newItems);
-      return newItems;
-    });
-    
-    // Show success message
-    const totalItems = itemsToAdd.length;
-    let message = `✅ Successfully saved ${totalItems} item${totalItems !== 1 ? 's' : ''} to your pantry!`;
-    if (updatedCount > 0 && addedCount > 0) {
-      message += ` (${addedCount} new, ${updatedCount} updated)`;
-    } else if (updatedCount > 0) {
-      message += ` (${updatedCount} updated with new quantities)`;
+    for (const receiptItem of itemsToAdd) {
+      const existingItem = pantryItems.find(
+        item => item.name.toLowerCase() === receiptItem.name.toLowerCase() &&
+                item.unit === receiptItem.unit
+      );
+      if (existingItem) {
+        // Update existing item
+        const updatedItem = {
+          ...existingItem,
+          quantity: (parseFloat(existingItem.quantity) + parseFloat(receiptItem.quantity)).toString()
+        };
+        await updatePantryItem(updatedItem);
+        updatedCount++;
+      } else {
+        // Add new item
+        const newItem = {
+          ...receiptItem,
+          id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9)
+        };
+        await createPantryItem(newItem);
+        addedCount++;
+      }
     }
-    
-    console.log('Success message:', message);
-    setSuccessMessage(message);
+    refreshPantryItems();
+    setSuccessMessage(`Successfully added ${addedCount} new items and updated ${updatedCount} existing items.`);
     setShowSuccessMessage(true);
-    
-    // Auto-hide success message after 4 seconds, but keep form open for more scanning
-    setTimeout(() => {
-      setShowSuccessMessage(false);
-    }, 4000);
-    
-    // Clear the parsed items but keep the form open for more scanning
+    // Optionally clear receipt state
     setReceiptText('');
     setParsedItems([]);
     setSelectedItems(new Set());
     handleClearImage();
-  }, [parsedItems, selectedItems, setPantryItems, pantryItems, handleClearImage]);
+  });
+      
 
   return (
     <div className="pantry-page-container">

@@ -1,14 +1,41 @@
-import React, { useState } from 'react';
-import { useLocalStorage, userSerializer } from '../shared';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocalStorage } from '../shared/hooks/useLocalStorage';
+import { fetchRecipes, fetchUsers, fetchPantryItems } from '../shared/api';
 import { RecipesPage, UsersPage, PantryPage, CookingForPage, ShoppingListPage } from '../features';
 import './App.css';
 
 function App() {
-  const [recipes, setRecipes] = useLocalStorage('recipes', []);
-  const [users, setUsers] = useLocalStorage('users', [], userSerializer);
-  const [pantryItems, setPantryItems] = useLocalStorage('pantryItems', []);
+  const [recipes, setRecipes] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [pantryItems, setPantryItems] = useState([]);
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
   const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
+
+  const refreshRecipes = useCallback(async () => {
+    const data = await fetchRecipes();
+    setRecipes(data);
+  }, []);
+
+  const refreshUsers = useCallback(async () => {
+    const data = await fetchUsers();
+    setUsers(data.map(user => ({
+      ...user,
+      allergens: new Set(user.allergens || [])
+    })));
+  }, []);
+
+  const refreshPantryItems = useCallback(async () => {
+    const data = await fetchPantryItems();
+    setPantryItems(data);
+  }, []);
+
+
+
+  useEffect(() => {
+    refreshRecipes();
+    refreshUsers();
+    refreshPantryItems();
+  }, [refreshRecipes, refreshUsers, refreshPantryItems]);
 
   return (
     <div className="App">
@@ -64,26 +91,26 @@ function App() {
 
       <main className="App-main single-column-layout">
         {currentPage === 'recipes' && (
-          <RecipesPage recipes={recipes} setRecipes={setRecipes} users={users} />
+          <RecipesPage recipes={recipes} users={users} refreshRecipes={refreshRecipes} />
         )}
         {currentPage === 'cooking-for' && (
           <CookingForPage 
             recipes={recipes} 
             users={users} 
             pantryItems={pantryItems} 
-            setPantryItems={setPantryItems}
+            refreshPantryItems={refreshPantryItems}
             shoppingList={shoppingList}
             setShoppingList={setShoppingList}
           />
         )}
         {currentPage === 'pantry' && (
-          <PantryPage pantryItems={pantryItems} setPantryItems={setPantryItems} />
+          <PantryPage pantryItems={pantryItems} refreshPantryItems={refreshPantryItems} />
         )}
         {currentPage === 'shopping-list' && (
           <ShoppingListPage shoppingList={shoppingList} setShoppingList={setShoppingList} />
         )}
         {currentPage === 'users' && (
-          <UsersPage users={users} setUsers={setUsers} />
+          <UsersPage users={users} refreshUsers={refreshUsers} />
         )}
       </main>
     </div>

@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
+import { deleteUser as apiDeleteUser } from '../../../shared/api';
 import { ALLERGENS } from '../../../shared/constants/allergens';
+import { createUser } from '../../../shared/api';
 import './UsersPage.css';
 
-const UsersPage = ({ users, setUsers }) => {
+const UsersPage = ({ users, refreshUsers }) => {
   const [currentUser, setCurrentUser] = useState({
     name: '',
     allergens: new Set()
@@ -46,24 +48,37 @@ const UsersPage = ({ users, setUsers }) => {
     }));
   }, []);
 
-  const handleUserSubmit = useCallback((e) => {
+  const handleUserSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (currentUser.name.trim()) {
       const newUser = {
         ...currentUser,
-        id: Date.now()
+        id: Date.now().toString(), // Ensure ID is a string for backend
+        allergens: [...currentUser.allergens] // Convert Set to Array for JSON serialization
       };
-      setUsers(prev => [...prev, newUser]);
+      try {
+        await createUser(newUser);
+        refreshUsers(); // Refresh users after creation
+      } catch (error) {
+        console.error('Error creating user:', error);
+        alert('Failed to create user. Please try again.');
+      }
       setCurrentUser({
         name: '',
         allergens: new Set()
       });
     }
-  }, [currentUser, setUsers]);
+  }, [currentUser, refreshUsers]);
 
-  const deleteUser = useCallback((id) => {
-    setUsers(prev => prev.filter(user => user.id !== id));
-  }, [setUsers]);
+  const handleDeleteUser = useCallback(async (id) => {
+    try {
+      await apiDeleteUser(id);
+      refreshUsers(); // Refresh users after deletion
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user. Please try again.');
+    }
+  }, [refreshUsers]);
 
   return (
     <div className="users-container">
@@ -133,7 +148,7 @@ const UsersPage = ({ users, setUsers }) => {
                     <h3>{user.name}</h3>
                   </div>
                   <button
-                    onClick={() => deleteUser(user.id)}
+                    onClick={() => handleDeleteUser(user.id)}
                     className="delete-user"
                   >
                     Delete

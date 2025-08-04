@@ -250,7 +250,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
   };
 
   const handleUserSelectionChange = (e) => {
-    const userId = e.target.value ? parseInt(e.target.value) : null;
+    const userId = e.target.value ? String(e.target.value) : null;
     setSelectedUserId(userId);
   };
 

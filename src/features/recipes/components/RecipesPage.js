@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { UNITS } from '../../../shared/constants/units';
 import { TIME_UNITS } from '../../../shared/constants/timeUnits';
+import { createRecipe, deleteRecipe } from '../../../shared/api';
 import './RecipesPage.css';
 
-const RecipesPage = ({ recipes, setRecipes, users }) => {
+const RecipesPage = ({ recipes, users, refreshRecipes }) => {
   const [currentRecipe, setCurrentRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -104,7 +105,7 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
     }));
   }, []);
 
-  const handleSubmit = useCallback((e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     const hasValidIngredients = currentRecipe.ingredients.some(ing => ing.name.trim() && ing.quantity.trim());
     
@@ -116,9 +117,15 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
       const newRecipe = {
         ...currentRecipe,
         ingredients: filteredIngredients,
-        id: Date.now()
+        id: Date.now().toString() // Ensure ID is a string for backend
       };
-      setRecipes(prev => [...prev, newRecipe]);
+      try {
+        await createRecipe(newRecipe);
+        refreshRecipes(); // Refresh recipes after creation
+      } catch (error) {
+        console.error('Error creating recipe:', error);
+        alert('Failed to create recipe. Please try again.');
+      }
       setCurrentRecipe({
         name: '',
         ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -130,7 +137,7 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
       });
       setShowForm(false); // Hide form after successful submission
     }
-  }, [currentRecipe, setRecipes]);
+  }, [currentRecipe, refreshRecipes]);
 
   const toggleForm = useCallback(() => {
     setShowForm(prev => !prev);
@@ -148,9 +155,15 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
     }
   }, [showForm]);
 
-  const deleteRecipe = useCallback((id) => {
-    setRecipes(prev => prev.filter(recipe => recipe.id !== id));
-  }, [setRecipes]);
+  const deleteRecipe = useCallback(async (id) => {
+    try {
+      await deleteRecipe(id);
+      refreshRecipes(); // Refresh recipes after deletion
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      alert('Failed to delete recipe. Please try again.');
+    }
+  }, [refreshRecipes]);
 
   return (
     <div className="recipes-page-container">
