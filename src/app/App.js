@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
 import { fetchRecipes, fetchUsers, fetchPantryItems } from '../shared/api';
-import { RecipesPage, UsersPage, PantryPage, CookingForPage, ShoppingListPage } from '../features';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot } from '../features';
+import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 
 function App() {
@@ -10,6 +12,25 @@ function App() {
   const [pantryItems, setPantryItems] = useState([]);
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
   const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
+  const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+
+    const handleLogin = (user) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
+
+  // If user is not logged in, show login page
+  if (!currentUser) {
+    return (
+      
+      <GoogleOAuthProvider clientId={getDecryptedGoogleClientId()}>
+        <LoginPage onLogin={handleLogin} />
+      </GoogleOAuthProvider>
+    );
+  }
 
   const refreshRecipes = useCallback(async () => {
     const data = await fetchRecipes();
@@ -40,7 +61,21 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Recipe Creator</h1>
+        <div className="header-top">
+          <h1>Smart Pantry</h1>
+          <div className="user-info">
+            <img 
+              src={currentUser.picture} 
+              alt={currentUser.name} 
+              className="user-avatar"
+            />
+            <span className="user-name">{currentUser.name}</span>
+            <button onClick={handleLogout} className="logout-btn">
+              <span className="logout-icon">🚪</span>
+              Logout
+            </button>
+          </div>
+        </div>
         <nav className="main-nav">
           <button
             className={`nav-btn ${currentPage === 'recipes' ? 'active' : ''}`}
@@ -56,7 +91,7 @@ function App() {
             <span className="nav-icon">👨‍🍳</span>
             Cooking For
           </button>
-          <button
+            <button
             className={`nav-btn ${currentPage === 'pantry' ? 'active' : ''}`}
             onClick={() => setCurrentPage('pantry')}
           >
@@ -86,6 +121,13 @@ function App() {
               <span className="users-badge">{users.length}</span>
             )}
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'user-details' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('user-details')}
+          >
+            <span className="nav-icon">👤</span>
+            Profile
+          </button>
         </nav>
       </header>
 
@@ -112,7 +154,14 @@ function App() {
         {currentPage === 'users' && (
           <UsersPage users={users} refreshUsers={refreshUsers} />
         )}
+        {currentPage === 'user-details' && (
+          <UserDetailsPage currentUser={currentUser} />
+        )}
+        {currentPage === 'user-details' && (
+          <UserDetailsPage currentUser={currentUser} />
+        )}
       </main>
+      <Chatbot />
     </div>
   );
 }

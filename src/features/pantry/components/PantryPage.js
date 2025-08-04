@@ -234,13 +234,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
   const addSelectedItemsToPantry = useCallback(async () => {
     const itemsToAdd = parsedItems.filter(item => selectedItems.has(item.id));
     
-    console.log('Save button clicked!');
-    console.log('Items to add:', itemsToAdd);
-    console.log('Selected items:', Array.from(selectedItems));
-    console.log('Current pantry items:', pantryItems);
-    
     if (itemsToAdd.length === 0) {
-      console.log('No items selected');
       return;
     }
     let addedCount = 0;
@@ -269,7 +263,15 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
       }
     }
     refreshPantryItems();
-    setSuccessMessage(`Successfully added ${addedCount} new items and updated ${updatedCount} existing items.`);
+    const totalItems = itemsToAdd.length;
+    let message = `✅ Successfully saved ${totalItems} item${totalItems !== 1 ? 's' : ''} to your pantry!`;
+    if (updatedCount > 0 && addedCount > 0) {
+      message += ` (${addedCount} new, ${updatedCount} updated)`;
+    } else if (updatedCount > 0) {
+      message += ` (${updatedCount} updated with new quantities)`;
+    }
+
+    setSuccessMessage(message);
     setShowSuccessMessage(true);
     // Optionally clear receipt state
     setReceiptText('');
