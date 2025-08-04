@@ -1,3 +1,4 @@
+const fs = require('fs');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -8,8 +9,11 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// Ensure the /app/db directory exists (for Docker bind mount)
+fs.mkdirSync('/app/db', { recursive: true });
+
 // Connect to SQLite database (or create it if it doesn't exist)
-const db = new sqlite3.Database('./recipe_app.db', (err) => {
+const db = new sqlite3.Database('/app/db/recipe_app.db', (err) => {
   if (err) {
     console.error('Error connecting to database:', err.message);
   } else {
