@@ -158,7 +158,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
     }
   }, [showForm]);
 
-  const deleteRecipe = useCallback(async (id) => {
+  const handleDeleteRecipe = useCallback(async (id) => {
     try {
       await deleteRecipe(id);
       refreshRecipes(); // Refresh recipes after deletion
@@ -215,7 +215,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteRecipe(recipe.id);
+                      handleDeleteRecipe(recipe.id);
                     }}
                     className="delete-recipe"
                     title="Delete recipe"
