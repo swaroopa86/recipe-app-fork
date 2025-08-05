@@ -132,7 +132,7 @@ function App() {
 
       <main className="App-main single-column-layout">
         {currentPage === 'recipes' && (
-          <RecipesPage recipes={recipes} users={users} refreshRecipes={refreshRecipes} />
+          <RecipesPage recipes={recipes} users={users} refreshRecipes={refreshRecipes} pantryItems={pantryItems} />
         )}
         {currentPage === 'cooking-for' && (
           <CookingForPage 
