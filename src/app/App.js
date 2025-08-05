@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage, userSerializer } from '../shared';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot } from '../features';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot, CaloricGoalPage } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
+import { getMacros } from '../features/recipes/components/RecipesPage';
 
 function App() {
   const [recipes, setRecipes] = useLocalStorage('recipes', []);
   const [users, setUsers] = useLocalStorage('users', [], userSerializer);
   const [pantryItems, setPantryItems] = useLocalStorage('pantryItems', []);
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
-  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
+  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'user-details'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+  const [macrosByRecipe, setMacrosByRecipe] = useState({});
 
-    const handleLogin = (user) => {
+  const handleLogin = (user) => {
     setCurrentUser(user);
   };
 
@@ -21,10 +23,20 @@ function App() {
     setCurrentUser(null);
   };
 
+  useEffect(() => {
+    async function fetchAllMacros() {
+      const macrosObj = {};
+      for (const recipe of recipes) {
+        macrosObj[recipe.id] = await getMacros(recipe.ingredients);
+      }
+      setMacrosByRecipe(macrosObj);
+    }
+    fetchAllMacros();
+  }, [recipes]);
+
   // If user is not logged in, show login page
   if (!currentUser) {
     return (
-      
       <GoogleOAuthProvider clientId={getDecryptedGoogleClientId()}>
         <LoginPage onLogin={handleLogin} />
       </GoogleOAuthProvider>
@@ -64,7 +76,7 @@ function App() {
             <span className="nav-icon">👨‍🍳</span>
             Cooking For
           </button>
-            <button
+          <button
             className={`nav-btn ${currentPage === 'pantry' ? 'active' : ''}`}
             onClick={() => setCurrentPage('pantry')}
           >
@@ -101,21 +113,34 @@ function App() {
             <span className="nav-icon">👤</span>
             Profile
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'calorie-goal' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('calorie-goal')}
+          >
+            <span className="nav-icon">🔥</span>
+            Calorie Goal
+          </button>
         </nav>
       </header>
 
       <main className="App-main single-column-layout">
         {currentPage === 'recipes' && (
-          <RecipesPage recipes={recipes} setRecipes={setRecipes} users={users} />
+          <RecipesPage
+            recipes={recipes}
+            setRecipes={setRecipes}
+            users={users}
+            macrosByRecipe={macrosByRecipe}
+          />
         )}
         {currentPage === 'cooking-for' && (
-          <CookingForPage 
-            recipes={recipes} 
-            users={users} 
-            pantryItems={pantryItems} 
+          <CookingForPage
+            recipes={recipes}
+            users={users}
+            pantryItems={pantryItems}
             setPantryItems={setPantryItems}
             shoppingList={shoppingList}
             setShoppingList={setShoppingList}
+            macrosByRecipe={macrosByRecipe}
           />
         )}
         {currentPage === 'pantry' && (
@@ -129,6 +154,9 @@ function App() {
         )}
         {currentPage === 'user-details' && (
           <UserDetailsPage currentUser={currentUser} />
+        )}
+        {currentPage === 'calorie-goal' && (
+          <CaloricGoalPage />
         )}
       </main>
       <Chatbot />
