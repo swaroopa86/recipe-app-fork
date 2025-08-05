@@ -36,7 +36,8 @@ const db = new sqlite3.Database('/app/db/recipe_app.db', (err) => {
         id TEXT PRIMARY KEY,
         name TEXT,
         quantity TEXT,
-        unit TEXT
+        unit TEXT,
+        price REAL
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS shoppingList (
         id TEXT PRIMARY KEY,
@@ -210,13 +211,13 @@ app.get('/api/pantryItems', async (req, res) => {
 });
 
 app.post('/api/pantryItems', async (req, res) => {
-  const { id, name, quantity, unit } = req.body;
+  const { id, name, quantity, unit, price = null } = req.body;
   try {
     await dbRun(
-      'INSERT INTO pantryItems (id, name, quantity, unit) VALUES (?, ?, ?, ?)',
-      [id, name, quantity, unit]
+      'INSERT INTO pantryItems (id, name, quantity, unit, price) VALUES (?, ?, ?, ?, ?)',
+      [id, name, quantity, unit, price]
     );
-    res.status(201).json({ id, name, quantity, unit });
+    res.status(201).json({ id, name, quantity, unit, price });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -224,13 +225,13 @@ app.post('/api/pantryItems', async (req, res) => {
 
 app.put('/api/pantryItems/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, quantity, unit } = req.body;
+  const { name, quantity, unit, price = null } = req.body;
   try {
     await dbRun(
-      'UPDATE pantryItems SET name = ?, quantity = ?, unit = ? WHERE id = ?',
-      [name, quantity, unit, id]
+      'UPDATE pantryItems SET name = ?, quantity = ?, unit = ?, price = ? WHERE id = ?',
+      [name, quantity, unit, price, id]
     );
-    res.json({ id, name, quantity, unit });
+    res.json({ id, name, quantity, unit, price });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

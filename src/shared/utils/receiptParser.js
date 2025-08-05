@@ -2,6 +2,8 @@ import { UNIT_MAPPING, SKIP_LINES } from '../constants/units';
 
 // Enhanced patterns for real grocery receipts
 const ITEM_PATTERNS = [
+  // General: 'ITEM_NAME    £PRICE' or 'ITEM_NAME    $PRICE' or 'ITEM_NAME    PRICE'
+  /^([A-Z\s\-]+?)\s+[$£]?(\d+\.\d{2})$/i,
   // Walmart style: "BANANAS 3143 2.18 lbs @ $0.68/lb $1.48 F"
   /^(.+?)\s+\d+\s+(\d+(?:\.\d+)?)\s*(\w+)?\s*@?\s*\$?\d+(?:\.\d+)?\/?\w*\s+\$(\d+\.\d+)/,
   
@@ -65,9 +67,15 @@ const normalizeUnit = (unit) => {
 };
 
 const parseItemFromMatch = (match, patternIndex) => {
-  let name, quantity = '1', unit = 'pieces';
+  let name, quantity = '1', unit = 'pieces', price = undefined;
   
   switch (patternIndex) {
+    case 0: // General: ITEM_NAME    (currency)PRICE
+      name = match[1];
+      price = match[2];
+      quantity = '1';
+      unit = 'pieces';
+      break;
     case 0: // Walmart style
       name = match[1];
       quantity = match[2] || '1';
@@ -141,7 +149,8 @@ const parseItemFromMatch = (match, patternIndex) => {
   return {
     name: cleanItemName(name),
     quantity: parseFloat(quantity).toString(),
-    unit: normalizeUnit(unit)
+    unit: normalizeUnit(unit),
+    ...(price !== undefined ? { price } : {})
   };
 };
 
@@ -169,7 +178,8 @@ export const parseReceiptText = (text) => {
             id: `receipt-${index}-${Date.now()}-${Math.random()}`,
             name: item.name.toLowerCase(),
             quantity: item.quantity,
-            unit: item.unit
+            unit: item.unit,
+            ...(item.price !== undefined ? { price: item.price } : {})
           });
           matched = true;
           break;
@@ -191,10 +201,17 @@ export const parseReceiptText = (text) => {
     }
   });
   
-  // Remove duplicates and clean up
-  const uniqueItems = items.filter((item, index, self) => 
-    index === self.findIndex(i => i.name === item.name && i.unit === item.unit)
-  );
-  
-  return uniqueItems;
+  // Combine duplicates: sum quantity for same name+unit, keep latest price
+  const combined = {};
+  for (const item of items) {
+    const key = `${item.name}||${item.unit}`;
+    if (!combined[key]) {
+      combined[key] = { ...item };
+    } else {
+      // sum quantities (as numbers)
+      combined[key].quantity = (parseFloat(combined[key].quantity) + parseFloat(item.quantity)).toString();
+
+    }
+  }
+  return Object.values(combined);
 }; 
