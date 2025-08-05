@@ -4,7 +4,15 @@ import { convertUnits, areUnitsCompatible, formatQuantity } from '../../../utils
 import RecipeModal from '../../recipes/components/RecipeModal';
 import './CookingForPage.css';
 
-const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingList, setShoppingList }) => {
+const CookingForPage = ({
+  recipes,
+  users,
+  pantryItems,
+  setPantryItems,
+  shoppingList,
+  setShoppingList,
+  macrosByRecipe // <-- add this
+}) => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -487,6 +495,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
                         onSelectRecipe={handleSelectRecipe}
                         onAddToShoppingList={handleAddToShoppingList}
                         onOpenRecipeModal={openRecipeModal}
+                        macros={macrosByRecipe && macrosByRecipe[recipe.id] ? macrosByRecipe[recipe.id] : { calories: 0, protein: 0, carbs: 0, fat: 0 }}
                       />
                     ))}
                   </div>
@@ -510,6 +519,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
                         onSelectRecipe={handleSelectRecipe}
                         onAddToShoppingList={handleAddToShoppingList}
                         onOpenRecipeModal={openRecipeModal}
+                        macros={macrosByRecipe && macrosByRecipe[recipe.id] ? macrosByRecipe[recipe.id] : { calories: 0, protein: 0, carbs: 0, fat: 0 }} // <-- add this line
                       />
                     ))}
                   </div>
@@ -532,7 +542,7 @@ const CookingForPage = ({ recipes, users, pantryItems, setPantryItems, shoppingL
 };
 
 // Separate component for recipe cards to keep code organized
-const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToShoppingList, onOpenRecipeModal }) => {
+const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToShoppingList, onOpenRecipeModal, macros }) => {
   return (
     <div 
       className={`recipe-card safe-recipe ${canMakeNow ? 'can-make-now' : 'missing-ingredients'} clickable-recipe`}
@@ -541,14 +551,28 @@ const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToS
       <div className="recipe-header">
         <div className="recipe-title-section">
           <h4>{recipe.name}</h4>
-          {recipe.cookingTime && (
-            <p className="recipe-cooking-time">
-              ⏱️ {recipe.cookingTime.quantity && recipe.cookingTime.unit
-                ? `${recipe.cookingTime.quantity} ${recipe.cookingTime.unit}`
-                : (typeof recipe.cookingTime === 'string' ? recipe.cookingTime : '')
-              }
-            </p>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+            {recipe.cookingTime && (
+              <p className="recipe-cooking-time" style={{ margin: 0 }}>
+                ⏱️ {recipe.cookingTime.quantity && recipe.cookingTime.unit
+                  ? `${recipe.cookingTime.quantity} ${recipe.cookingTime.unit}`
+                  : (typeof recipe.cookingTime === 'string' ? recipe.cookingTime : '')
+                }
+              </p>
+            )}
+            {/* --- Macros Section --- */}
+            <div className="macros-inline">
+              <span className="macro-label">Calories</span>
+              <span className="macro-value">{macros.calories} kcal</span>
+              <span className="macro-label">Protein</span>
+              <span className="macro-value">{macros.protein} g</span>
+              <span className="macro-label">Carbs</span>
+              <span className="macro-value">{macros.carbs} g</span>
+              <span className="macro-label">Fat</span>
+              <span className="macro-value">{macros.fat} g</span>
+            </div>
+            {/* --- End Macros Section --- */}
+          </div>
           <div className="recipe-badges">
             <div className="safety-badge">
               <span className="safe-icon">✅</span>
@@ -603,4 +627,4 @@ const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToS
   );
 };
 
-export default CookingForPage; 
+export default CookingForPage;

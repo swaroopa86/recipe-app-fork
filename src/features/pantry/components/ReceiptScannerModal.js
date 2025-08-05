@@ -1,13 +1,13 @@
 import React from 'react';
 import { UNITS } from '../../../shared/constants/units';
 
-const ImageUploadSection = ({ 
-  uploadedImage, 
-  isProcessingOCR, 
-  ocrProgress, 
-  ocrStatus, 
-  onImageUpload, 
-  onClearImage 
+const ImageUploadSection = ({
+  uploadedImage,
+  isProcessingOCR,
+  ocrProgress,
+  ocrStatus,
+  onImageUpload,
+  onClearImage
 }) => (
   <div className="image-upload-section">
     <div className="form-group">
@@ -43,8 +43,8 @@ const ImageUploadSection = ({
           <div className="image-info">
             <small>{(uploadedImage.size / 1024 / 1024).toFixed(2)} MB</small>
           </div>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={onClearImage}
             className="clear-image"
             disabled={isProcessingOCR}
@@ -53,9 +53,9 @@ const ImageUploadSection = ({
             ✕
           </button>
         </div>
-        <img 
-          src={URL.createObjectURL(uploadedImage)} 
-          alt="Receipt preview" 
+        <img
+          src={URL.createObjectURL(uploadedImage)}
+          alt="Receipt preview"
           className="receipt-image-preview"
         />
       </div>
@@ -68,8 +68,8 @@ const ImageUploadSection = ({
           <span className="progress-percentage">{ocrProgress}%</span>
         </div>
         <div className="progress-bar">
-          <div 
-            className="progress-fill" 
+          <div
+            className="progress-fill"
             style={{ width: `${ocrProgress}%` }}
           ></div>
         </div>
@@ -85,16 +85,17 @@ const ImageUploadSection = ({
   </div>
 );
 
-const ParsedItemsList = ({ 
-  parsedItems, 
-  selectedItems, 
-  onToggleSelection, 
-  onSelectAll, 
+const ParsedItemsList = ({
+  parsedItems,
+  selectedItems,
+  onToggleSelection,
+  onSelectAll,
   onDeselectAll,
   onSaveItems,
   onClose,
   onItemQuantityChange,
-  onItemUnitChange
+  onItemUnitChange,
+  onItemPriceChange
 }) => (
   <div className="parsed-items-section">
     <div className="parsed-items-header">
@@ -108,7 +109,7 @@ const ParsedItemsList = ({
         </button>
       </div>
     </div>
-    
+
     <div className="parsed-items-list">
       {parsedItems.map(item => (
         <div key={item.id} className={`parsed-item ${selectedItems.has(item.id) ? 'selected' : ''}`}>
@@ -121,10 +122,9 @@ const ParsedItemsList = ({
                 className="parsed-item-checkbox"
               />
             </div>
-            
+
             <div className="parsed-item-details">
               <div className="parsed-item-name">{item.name}</div>
-              
               <div className="parsed-item-quantity-controls">
                 <div className="quantity-input-group">
                   <label htmlFor={`quantity-${item.id}`} className="sr-only">Quantity</label>
@@ -139,7 +139,7 @@ const ParsedItemsList = ({
                     placeholder="Qty"
                   />
                 </div>
-                
+
                 <div className="unit-select-group">
                   <label htmlFor={`unit-${item.id}`} className="sr-only">Unit</label>
                   <select
@@ -155,35 +155,50 @@ const ParsedItemsList = ({
                     ))}
                   </select>
                 </div>
+                <div className="quantity-unit-group">
+                  <div className="price-input-group">
+                    <label htmlFor={`price-${item.id}`} className="sr-only">Price</label>
+                    <input
+                      id={`price-${item.id}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={item.price || ''}
+                      onChange={(e) => onItemPriceChange(item.id, e.target.value)}
+                      className="quantity-input" // use same class as quantity for consistent style
+                      placeholder="Price"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       ))}
     </div>
-    
+
     <div className="save-to-pantry-section">
       <div className="save-summary">
         <h4>💾 Save to Your Pantry:</h4>
         <p>
-          {selectedItems.size > 0 
+          {selectedItems.size > 0
             ? `${selectedItems.size} item${selectedItems.size !== 1 ? 's' : ''} selected and ready to save`
             : 'Select items above to save them to your pantry'
           }
         </p>
         <small className="edit-hint">💡 Tip: You can edit quantities and units before saving!</small>
       </div>
-      
+
       <div className="save-actions">
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={onSaveItems}
           disabled={selectedItems.size === 0}
           className="save-to-pantry-btn"
         >
           💾 Save {selectedItems.size || 0} Item{selectedItems.size !== 1 ? 's' : ''} to Pantry
         </button>
-        
+
         <button type="button" onClick={onClose} className="cancel-btn secondary">
           Close Scanner
         </button>
@@ -191,6 +206,7 @@ const ParsedItemsList = ({
     </div>
   </div>
 );
+
 
 const ReceiptScannerModal = ({
   showModal,
@@ -212,7 +228,8 @@ const ReceiptScannerModal = ({
   onDeselectAll,
   onSaveItems,
   onItemQuantityChange,
-  onItemUnitChange
+  onItemUnitChange,
+  onItemPriceChange
 }) => {
   if (!showModal) return null;
 
@@ -232,7 +249,7 @@ const ReceiptScannerModal = ({
               {successMessage}
             </div>
           )}
-          
+
           <ImageUploadSection
             uploadedImage={uploadedImage}
             isProcessingOCR={isProcessingOCR}
@@ -259,7 +276,7 @@ const ReceiptScannerModal = ({
               disabled={isProcessingOCR}
             />
           </div>
-          
+
           {parsedItems.length > 0 && (
             <ParsedItemsList
               parsedItems={parsedItems}
@@ -271,6 +288,7 @@ const ReceiptScannerModal = ({
               onClose={onClose}
               onItemQuantityChange={onItemQuantityChange}
               onItemUnitChange={onItemUnitChange}
+              onItemPriceChange={onItemPriceChange}
             />
           )}
         </div>

@@ -230,6 +230,14 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
     ));
   }, []);
 
+  const handleItemPriceChange = useCallback((itemId, newPrice) => {
+    setParsedItems(prev => prev.map(item =>
+      item.id === itemId
+        ? { ...item, price: newPrice }
+        : item
+    ));
+  }, []);
+
   // Save items to pantry
   const addSelectedItemsToPantry = useCallback(async () => {
     const itemsToAdd = parsedItems.filter(item => selectedItems.has(item.id));
@@ -256,7 +264,8 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
         // Add new item
         const newItem = {
           ...receiptItem,
-          id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9)
+          id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+          price: receiptItem.price !== undefined && receiptItem.price !== '' ? Number(receiptItem.price) : null
         };
         await createPantryItem(newItem);
         addedCount++;
@@ -278,8 +287,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
     setParsedItems([]);
     setSelectedItems(new Set());
     handleClearImage();
-  });
-      
+  }, [parsedItems, selectedItems, refreshPantryItems, updatePantryItem, createPantryItem]);
 
   return (
     <div className="pantry-page-container">
@@ -360,9 +368,10 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
         onSaveItems={addSelectedItemsToPantry}
         onItemQuantityChange={handleItemQuantityChange}
         onItemUnitChange={handleItemUnitChange}
+        onItemPriceChange={handleItemPriceChange}
       />
     </div>
   );
 };
 
-export default PantryPage; 
+export default PantryPage;

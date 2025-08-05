@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
-import { fetchRecipes, fetchUsers, fetchPantryItems } from '../shared/api';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot } from '../features';
+import { fetchRecipes, fetchUsers, fetchPantryItems, fetchShoppingList } from '../shared/api';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot, CaloricGoalPage } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
+import { getMacros } from '../features/recipes/components/RecipesPage';
 
 function App() {
   const [recipes, setRecipes] = useState([]);
   const [users, setUsers] = useState([]);
   const [pantryItems, setPantryItems] = useState([]);
-  const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
-  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
+  const [shoppingList, setShoppingList] = useState([]);
+  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'user-details'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+  const [macrosByRecipe, setMacrosByRecipe] = useState({});
 
-    const handleLogin = (user) => {
+  const handleLogin = (user) => {
     setCurrentUser(user);
   };
 
@@ -40,13 +42,30 @@ function App() {
     setPantryItems(data);
   }, []);
 
+  const refreshShoppingList = useCallback(async () => {
+    const data = await fetchShoppingList();
+    setShoppingList(data || []);
+  }, []);
+
   useEffect(() => {
     if (currentUser) {
       refreshRecipes();
       refreshUsers();
       refreshPantryItems();
+      refreshShoppingList();
     }
-  }, [currentUser, refreshRecipes, refreshUsers, refreshPantryItems]);
+  }, [currentUser, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
+
+  useEffect(() => {
+    async function fetchAllMacros() {
+      const macrosObj = {};
+      for (const recipe of recipes) {
+        macrosObj[recipe.id] = await getMacros(recipe.ingredients);
+      }
+      setMacrosByRecipe(macrosObj);
+    }
+    fetchAllMacros();
+  }, [recipes]);
 
   // If user is not logged in, show login page
   if (!currentUser) {
@@ -90,7 +109,7 @@ function App() {
             <span className="nav-icon">👨‍🍳</span>
             Cooking For
           </button>
-            <button
+          <button
             className={`nav-btn ${currentPage === 'pantry' ? 'active' : ''}`}
             onClick={() => setCurrentPage('pantry')}
           >
@@ -127,21 +146,35 @@ function App() {
             <span className="nav-icon">👤</span>
             Profile
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'calorie-goal' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('calorie-goal')}
+          >
+            <span className="nav-icon">🔥</span>
+            Calorie Goal
+          </button>
         </nav>
       </header>
 
       <main className="App-main single-column-layout">
         {currentPage === 'recipes' && (
-          <RecipesPage recipes={recipes} users={users} refreshRecipes={refreshRecipes} pantryItems={pantryItems} />
+          <RecipesPage
+            recipes={recipes}
+            users={users}
+            refreshRecipes={refreshRecipes}
+            pantryItems={pantryItems}
+            macrosByRecipe={macrosByRecipe}
+          />
         )}
         {currentPage === 'cooking-for' && (
-          <CookingForPage 
-            recipes={recipes} 
-            users={users} 
-            pantryItems={pantryItems} 
+          <CookingForPage
+            recipes={recipes}
+            users={users}
+            pantryItems={pantryItems}
             refreshPantryItems={refreshPantryItems}
             shoppingList={shoppingList}
             setShoppingList={setShoppingList}
+            macrosByRecipe={macrosByRecipe}
           />
         )}
         {currentPage === 'pantry' && (
@@ -155,6 +188,9 @@ function App() {
         )}
         {currentPage === 'user-details' && (
           <UserDetailsPage currentUser={currentUser} />
+        )}
+        {currentPage === 'calorie-goal' && (
+          <CaloricGoalPage />
         )}
       </main>
       <Chatbot />

@@ -595,6 +595,31 @@
   font-weight: 600;
 }
 
+.macros-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.98rem;
+  margin-left: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.macros-inline .macro-label {
+  color: #555;
+  font-weight: 500;
+  margin-right: 2px;
+}
+
+.macros-inline .macro-value {
+  color: #333;
+  font-weight: 600;
+  background: #f0f0ff;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  font-size: 0.98rem;
+}
+
 @media (max-width: 768px) {
   .cooking-for-container {
     padding: 1rem;
@@ -828,4 +853,4 @@
     transform: translateX(0);
     opacity: 1;
   }
-} 
+}
