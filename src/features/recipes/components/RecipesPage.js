@@ -5,7 +5,7 @@ import { createRecipe, deleteRecipe } from '../../../shared/api';
 import RecipeModal from './RecipeModal';
 import './RecipesPage.css';
 
-const RecipesPage = ({ recipes, users, refreshRecipes }) => {
+const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [] }) => {
   const [currentRecipe, setCurrentRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -387,6 +387,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes }) => {
         recipe={selectedRecipe}
         isOpen={showRecipeModal}
         onClose={closeRecipeModal}
+        pantryItems={pantryItems}
       />
     </div>
   );

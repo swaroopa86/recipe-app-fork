@@ -67,7 +67,7 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
                     : ingredient.name || ingredient;
                   
                   const requiredQuantity = typeof ingredient === 'object' 
-                    ? ingredient.quantity || 1 
+                    ? parseFloat(ingredient.quantity) || 1 
                     : 1;
                   
                   const requiredUnit = typeof ingredient === 'object' 
@@ -87,7 +87,7 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
                   }
 
                   // Check if we have enough quantity
-                  let availableQuantity = pantryItem.quantity;
+                  let availableQuantity = parseFloat(pantryItem.quantity) || 0;
                   
                   // Try to convert units if they don't match
                   if (pantryItem.unit !== requiredUnit) {
