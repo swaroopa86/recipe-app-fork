@@ -49,3 +49,10 @@ export const fetchShoppingList = async () => callApi('/shoppingList');
 export const createShoppingListItem = async (item) => callApi('/shoppingList', 'POST', item);
 export const updateShoppingListItem = async (item) => callApi(`/shoppingList/${item.id}`, 'PUT', item);
 export const deleteShoppingListItem = async (id) => callApi(`/shoppingList/${id}`, 'DELETE');
+
+// Cooking History API
+export const fetchCookingHistory = async () => callApi('/cookingHistory');
+export const recordRecipeCooked = async (cookingRecord) => callApi('/cookingHistory', 'POST', cookingRecord);
+
+// Reports API
+export const fetchWeeklyReport = async () => callApi('/reports/weekly');

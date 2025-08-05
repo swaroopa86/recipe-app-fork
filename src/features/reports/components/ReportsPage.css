@@ -1,0 +1,431 @@
+.reports-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: calc(100vh - 120px);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.report-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.report-header h1 {
+  font-size: 2.5rem;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.report-period {
+  font-size: 1.1rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.report-section {
+  background: white;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.report-section h2 {
+  font-size: 1.5rem;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Summary Cards */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.summary-card {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+}
+
+.summary-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Timeline */
+.cooked-recipes-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid #4299e1;
+  transition: all 0.2s ease;
+}
+
+.timeline-item:hover {
+  background: #edf2f7;
+  transform: translateX(4px);
+}
+
+.timeline-date {
+  font-size: 0.85rem;
+  color: #718096;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: center;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.timeline-content h3 {
+  margin: 0 0 0.25rem 0;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.timeline-content p {
+  margin: 0;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+/* Frequency Chart */
+.frequency-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.frequency-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.frequency-label {
+  min-width: 150px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.frequency-bar-container {
+  flex: 1;
+  height: 32px;
+  background: #e2e8f0;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.frequency-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4299e1, #3182ce);
+  border-radius: 16px;
+  transition: width 0.3s ease;
+}
+
+.frequency-count {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.85rem;
+}
+
+/* Ingredients List */
+.ingredients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ingredient-usage-item {
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid #38b2ac;
+}
+
+.ingredient-name {
+  font-weight: 600;
+  color: #2d3748;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.ingredient-stats {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+/* Pantry Impact Grid */
+.pantry-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.impact-item {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.impact-item.impact-high {
+  background: #fed7d7;
+  border-color: #fc8181;
+}
+
+.impact-item.impact-medium {
+  background: #fefcbf;
+  border-color: #f6e05e;
+}
+
+.impact-item.impact-low {
+  background: #c6f6d5;
+  border-color: #68d391;
+}
+
+.impact-item.impact-minimal {
+  background: #bee3f8;
+  border-color: #63b3ed;
+}
+
+.impact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.impact-ingredient {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.impact-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.impact-badge.impact-high {
+  background: #fc8181;
+  color: white;
+}
+
+.impact-badge.impact-medium {
+  background: #f6e05e;
+  color: #744210;
+}
+
+.impact-badge.impact-low {
+  background: #68d391;
+  color: #22543d;
+}
+
+.impact-badge.impact-minimal {
+  background: #63b3ed;
+  color: #2c5282;
+}
+
+.impact-details p {
+  margin: 0.25rem 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+/* Recommendations */
+.recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.recommendation-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.recommendation-card.warning {
+  background: #fed7d7;
+  border-color: #e53e3e;
+}
+
+.recommendation-card.suggestion {
+  background: #bee3f8;
+  border-color: #3182ce;
+}
+
+.recommendation-card.tip {
+  background: #c6f6d5;
+  border-color: #38a169;
+}
+
+.recommendation-card h3 {
+  margin: 0 0 1rem 0;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.recommendation-card p {
+  color: #4a5568;
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.recommendation-card ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: #4a5568;
+}
+
+.recommendation-card li {
+  margin: 0.25rem 0;
+}
+
+/* Loading and Error States */
+.reports-page.loading,
+.reports-page.error,
+.reports-page.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #4299e1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.reports-page.error button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.reports-page.error button:hover {
+  background: #3182ce;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .reports-page {
+    padding: 1rem;
+  }
+
+  .report-header h1 {
+    font-size: 2rem;
+  }
+
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .summary-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .summary-number {
+    font-size: 2rem;
+  }
+
+  .timeline-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .timeline-date {
+    min-width: auto;
+  }
+
+  .frequency-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .frequency-label {
+    min-width: auto;
+  }
+
+  .pantry-impact-grid,
+  .recommendations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+} 

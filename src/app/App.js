@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
 import { fetchRecipes, fetchUsers, fetchPantryItems } from '../shared/api';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot } from '../features';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, ReportsPage, LoginPage, Chatbot } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 
@@ -11,7 +11,7 @@ function App() {
   const [users, setUsers] = useState([]);
   const [pantryItems, setPantryItems] = useState([]);
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
-  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
+  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'reports', or 'user-details'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
 
     const handleLogin = (user) => {
@@ -121,6 +121,13 @@ function App() {
             )}
           </button>
           <button
+            className={`nav-btn ${currentPage === 'reports' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('reports')}
+          >
+            <span className="nav-icon">📊</span>
+            Reports
+          </button>
+          <button
             className={`nav-btn ${currentPage === 'user-details' ? 'active' : ''}`}
             onClick={() => setCurrentPage('user-details')}
           >
@@ -132,7 +139,7 @@ function App() {
 
       <main className="App-main single-column-layout">
         {currentPage === 'recipes' && (
-          <RecipesPage recipes={recipes} users={users} refreshRecipes={refreshRecipes} pantryItems={pantryItems} />
+          <RecipesPage recipes={recipes} users={users} refreshRecipes={refreshRecipes} pantryItems={pantryItems} currentUser={currentUser} refreshPantryItems={refreshPantryItems} />
         )}
         {currentPage === 'cooking-for' && (
           <CookingForPage 
@@ -149,6 +156,9 @@ function App() {
         )}
         {currentPage === 'shopping-list' && (
           <ShoppingListPage shoppingList={shoppingList} setShoppingList={setShoppingList} />
+        )}
+        {currentPage === 'reports' && (
+          <ReportsPage />
         )}
         {currentPage === 'users' && (
           <UsersPage users={users} refreshUsers={refreshUsers} />

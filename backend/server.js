@@ -44,6 +44,15 @@ const db = new sqlite3.Database('/app/db/recipe_app.db', (err) => {
         quantity TEXT,
         unit TEXT
       )`);
+      db.run(`CREATE TABLE IF NOT EXISTS cookingHistory (
+        id TEXT PRIMARY KEY,
+        recipeId TEXT,
+        recipeName TEXT,
+        cookedAt TEXT,
+        servings INTEGER DEFAULT 1,
+        userId TEXT,
+        FOREIGN KEY(recipeId) REFERENCES recipes(id)
+      )`);
       console.log('Tables created or already exist.');
     });
   }
@@ -275,6 +284,73 @@ app.delete('/api/shoppingList/:id', async (req, res) => {
   try {
     await dbRun('DELETE FROM shoppingList WHERE id = ?', id);
     res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API Endpoints for Cooking History
+app.get('/api/cookingHistory', async (req, res) => {
+  try {
+    const history = await dbAll('SELECT * FROM cookingHistory ORDER BY cookedAt DESC');
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/cookingHistory', async (req, res) => {
+  const { id, recipeId, recipeName, cookedAt, servings, userId } = req.body;
+  try {
+    await dbRun(
+      'INSERT INTO cookingHistory (id, recipeId, recipeName, cookedAt, servings, userId) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, recipeId, recipeName, cookedAt, servings || 1, userId]
+    );
+    res.status(201).json({ id, recipeId, recipeName, cookedAt, servings, userId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/cookingHistory/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await dbRun('DELETE FROM cookingHistory WHERE id = ?', id);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API Endpoint for Weekly Report
+app.get('/api/reports/weekly', async (req, res) => {
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Get cooking history from last 7 days
+    const cookedRecipes = await dbAll(
+      'SELECT * FROM cookingHistory WHERE cookedAt >= ? ORDER BY cookedAt DESC',
+      [weekAgo]
+    );
+    
+    // Get current pantry items
+    const pantryItems = await dbAll('SELECT * FROM pantryItems');
+    
+    // Get all recipes for reference
+    const recipes = await dbAll('SELECT * FROM recipes');
+    
+    res.json({
+      period: {
+        start: weekAgo,
+        end: new Date().toISOString()
+      },
+      cookedRecipes,
+      pantryItems,
+      recipes: recipes.map(recipe => ({
+        ...recipe,
+        ingredients: JSON.parse(recipe.ingredients)
+      }))
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -5,3 +5,4 @@ export { CookingForPage } from './cooking-for';
 export { ShoppingListPage } from './shopping-list';
 export { LoginPage } from './auth';
 export { Chatbot } from './chatbot';
+export { ReportsPage } from './reports';
