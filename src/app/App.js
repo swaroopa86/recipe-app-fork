@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
-import { fetchRecipes, fetchUsers, fetchPantryItems } from '../shared/api';
+import { fetchRecipes, fetchUsers, fetchPantryItems, fetchShoppingList } from '../shared/api';
 import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
@@ -10,7 +10,7 @@ function App() {
   const [recipes, setRecipes] = useState([]);
   const [users, setUsers] = useState([]);
   const [pantryItems, setPantryItems] = useState([]);
-  const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
+  const [shoppingList, setShoppingList] = useState([]);
   const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
 
@@ -40,13 +40,19 @@ function App() {
     setPantryItems(data);
   }, []);
 
+  const refreshShoppingList = useCallback(async () => {
+    const data = await fetchShoppingList();
+    setShoppingList(data || []);
+  }, []);
+
   useEffect(() => {
     if (currentUser) {
       refreshRecipes();
       refreshUsers();
       refreshPantryItems();
+      refreshShoppingList();
     }
-  }, [currentUser, refreshRecipes, refreshUsers, refreshPantryItems]);
+  }, [currentUser, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
 
   // If user is not logged in, show login page
   if (!currentUser) {

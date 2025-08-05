@@ -42,7 +42,9 @@ const db = new sqlite3.Database('/app/db/recipe_app.db', (err) => {
         id TEXT PRIMARY KEY,
         name TEXT,
         quantity TEXT,
-        unit TEXT
+        unit TEXT,
+        purchased INTEGER DEFAULT 0,
+        recipeSource TEXT
       )`);
       console.log('Tables created or already exist.');
     });
@@ -247,21 +249,25 @@ app.delete('/api/pantryItems/:id', async (req, res) => {
 // API Endpoints for Shopping List
 app.get('/api/shoppingList', async (req, res) => {
   try {
-    const shoppingList = await dbAll('SELECT * FROM shoppingList');
-    res.json(shoppingList);
+    const items = await dbAll('SELECT * FROM shoppingList');
+    // Convert purchased from 0/1 to boolean for frontend
+    res.json(items.map(item => ({
+      ...item,
+      purchased: !!item.purchased
+    })));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 app.post('/api/shoppingList', async (req, res) => {
-  const { id, name, quantity, unit } = req.body;
+  const { id, name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
   try {
     await dbRun(
-      'INSERT INTO shoppingList (id, name, quantity, unit) VALUES (?, ?, ?, ?)',
-      [id, name, quantity, unit]
+      'INSERT INTO shoppingList (id, name, quantity, unit, purchased, recipeSource) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, name, quantity, unit, purchased ? 1 : 0, recipeSource]
     );
-    res.status(201).json({ id, name, quantity, unit });
+    res.status(201).json({ id, name, quantity, unit, purchased, recipeSource });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -269,13 +275,13 @@ app.post('/api/shoppingList', async (req, res) => {
 
 app.put('/api/shoppingList/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, quantity, unit } = req.body;
+  const { name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
   try {
     await dbRun(
-      'UPDATE shoppingList SET name = ?, quantity = ?, unit = ? WHERE id = ?',
-      [name, quantity, unit, id]
+      'UPDATE shoppingList SET name = ?, quantity = ?, unit = ?, purchased = ?, recipeSource = ? WHERE id = ?',
+      [name, quantity, unit, purchased ? 1 : 0, recipeSource, id]
     );
-    res.json({ id, name, quantity, unit });
+    res.json({ id, name, quantity, unit, purchased, recipeSource });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
