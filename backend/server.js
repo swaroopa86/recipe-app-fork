@@ -312,16 +312,6 @@ app.post('/api/cookingHistory', async (req, res) => {
   }
 });
 
-app.delete('/api/cookingHistory/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    await dbRun('DELETE FROM cookingHistory WHERE id = ?', id);
-    res.status(204).send();
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // API Endpoint for Weekly Report
 app.get('/api/reports/weekly', async (req, res) => {
   try {
