@@ -52,7 +52,10 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
           <div className="recipe-section">
             <h3>Cooking Time</h3>
             <p className="cooking-time">
-              {recipe.cookingTime?.quantity} {recipe.cookingTime?.unit}
+              {recipe.cookingTime && recipe.cookingTime.quantity && recipe.cookingTime.unit
+                ? `${recipe.cookingTime.quantity} ${recipe.cookingTime.unit}`
+                : (typeof recipe.cookingTime === 'string' ? recipe.cookingTime : '')
+              }
             </p>
           </div>
 

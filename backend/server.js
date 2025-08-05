@@ -90,10 +90,21 @@ const dbGet = (query, params = []) => {
 app.get('/api/recipes', async (req, res) => {
   try {
     const recipes = await dbAll('SELECT * FROM recipes');
-    res.json(recipes.map(r => ({
-      ...r,
-      ingredients: JSON.parse(r.ingredients)
-    })));
+    res.json(recipes.map(r => {
+      let cookingTime = null;
+      if (r.cookingTime) {
+        try {
+          cookingTime = JSON.parse(r.cookingTime);
+        } catch (e) {
+          cookingTime = null;
+        }
+      }
+      return {
+        ...r,
+        ingredients: JSON.parse(r.ingredients),
+        cookingTime
+      };
+    }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -104,7 +115,7 @@ app.post('/api/recipes', async (req, res) => {
   try {
     await dbRun(
       'INSERT INTO recipes (id, name, ingredients, method, cookingTime) VALUES (?, ?, ?, ?, ?)',
-      [id, name, JSON.stringify(ingredients), method, cookingTime]
+      [id, name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime)]
     );
     res.status(201).json({ id, name, ingredients, method, cookingTime });
   } catch (err) {
@@ -118,7 +129,7 @@ app.put('/api/recipes/:id', async (req, res) => {
   try {
     await dbRun(
       'UPDATE recipes SET name = ?, ingredients = ?, method = ?, cookingTime = ? WHERE id = ?',
-      [name, JSON.stringify(ingredients), method, cookingTime, id]
+      [name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime), id]
     );
     res.json({ id, name, ingredients, method, cookingTime });
   } catch (err) {

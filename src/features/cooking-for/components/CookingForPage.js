@@ -543,9 +543,9 @@ const RecipeCard = ({ recipe, selectedUser, canMakeNow, onSelectRecipe, onAddToS
           <h4>{recipe.name}</h4>
           {recipe.cookingTime && (
             <p className="recipe-cooking-time">
-              ⏱️ {typeof recipe.cookingTime === 'object' 
+              ⏱️ {recipe.cookingTime.quantity && recipe.cookingTime.unit
                 ? `${recipe.cookingTime.quantity} ${recipe.cookingTime.unit}`
-                : recipe.cookingTime
+                : (typeof recipe.cookingTime === 'string' ? recipe.cookingTime : '')
               }
             </p>
           )}
