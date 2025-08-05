@@ -16,10 +16,12 @@ function App() {
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
   const [pantryDetails, setPantryDetails] = useState(null);
   const [showPantrySetup, setShowPantrySetup] = useState(false);
+  const [isLoadingPantryDetails, setIsLoadingPantryDetails] = useState(false);
   const [macrosByRecipe, setMacrosByRecipe] = useState({});
 
     const handleLogin = async (user) => {
     setCurrentUser(user);
+    setIsLoadingPantryDetails(true);
     
     // Check if user has pantry details
     try {
@@ -29,6 +31,8 @@ function App() {
     } catch (error) {
       // If no pantry details found, show setup page
       setShowPantrySetup(true);
+    } finally {
+      setIsLoadingPantryDetails(false);
     }
   };
 
@@ -36,6 +40,7 @@ function App() {
     setCurrentUser(null);
     setPantryDetails(null);
     setShowPantrySetup(false);
+    setIsLoadingPantryDetails(false);
   };
 
   const refreshRecipes = useCallback(async () => {
@@ -95,10 +100,18 @@ function App() {
     return (
       <PantrySetupPage 
         currentUser={currentUser} 
-        onComplete={() => {
+        onComplete={async () => {
           setShowPantrySetup(false);
-          // Refresh pantry details after setup
-          fetchPantryDetails(currentUser.id).then(setPantryDetails);
+          setIsLoadingPantryDetails(true);
+          try {
+            // Refresh pantry details after setup
+            const details = await fetchPantryDetails(currentUser.id);
+            setPantryDetails(details);
+          } catch (error) {
+            console.error('Error fetching pantry details after setup:', error);
+          } finally {
+            setIsLoadingPantryDetails(false);
+          }
         }} 
       />
     );
@@ -108,7 +121,17 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div className="header-top">
-          <h1>Smart Pantry</h1>
+          <h1>
+            {isLoadingPantryDetails ? (
+              'Loading your pantry...'
+            ) : pantryDetails ? (
+              <>
+                Smart pantry: <span className="pantry-name">{pantryDetails.pantryName}</span>
+              </>
+            ) : (
+              'Smart Pantry'
+            )}
+          </h1>
           <div className="user-info">
             <img 
               src={currentUser.picture} 
