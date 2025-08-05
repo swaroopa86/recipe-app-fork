@@ -5,6 +5,6 @@ export { UsersPage, UserDetailsPage } from './users';
 export { PantryPage } from './pantry';
 export { CookingForPage } from './cooking-for';
 export { ShoppingListPage } from './shopping-list';
-export { LoginPage, PantrySetupPage } from './auth';
+export { LoginPage, PantrySetupPage } from './auth/UserAuth';
 export { Chatbot } from './chatbot';
 export { default as CaloricGoalPage } from './caloric-goal/CaloricGoalPage';

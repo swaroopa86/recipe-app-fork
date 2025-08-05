@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createPantryDetails } from '../../shared/api';
+import { createPantryDetails, generatePantryId } from '../../shared/api';
 import './PantrySetupPage.css';
 
 function PantrySetupPage({ currentUser, onComplete }) {
@@ -7,6 +7,8 @@ function PantrySetupPage({ currentUser, onComplete }) {
   const [pantryType, setPantryType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,8 +22,13 @@ function PantrySetupPage({ currentUser, onComplete }) {
     setError('');
 
     try {
+      // Generate unique pantry ID before saving
+      const response = await generatePantryId();
+      const generatedPantryId = response.pantryId;
+      
       await createPantryDetails({
         userId: currentUser.id,
+        pantryId: generatedPantryId,
         pantryName: pantryName.trim(),
         pantryType
       });
@@ -61,6 +68,8 @@ function PantrySetupPage({ currentUser, onComplete }) {
                 {error}
               </div>
             )}
+            
+
             
             <div className="form-group">
               <label htmlFor="pantryName">Pantry Name</label>

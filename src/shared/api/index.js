@@ -54,3 +54,4 @@ export const deleteShoppingListItem = async (id) => callApi(`/shoppingList/${id}
 export const fetchPantryDetails = async (userId) => callApi(`/pantryDetails/${userId}`);
 export const createPantryDetails = async (pantryDetails) => callApi('/pantryDetails', 'POST', pantryDetails);
 export const updatePantryDetails = async (pantryDetails) => callApi(`/pantryDetails/${pantryDetails.userId}`, 'PUT', pantryDetails);
+export const generatePantryId = async () => callApi('/generatePantryId');

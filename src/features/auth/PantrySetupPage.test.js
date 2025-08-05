@@ -5,10 +5,11 @@ import PantrySetupPage from './PantrySetupPage';
 
 // Mock the API
 jest.mock('../../shared/api', () => ({
-  createPantryDetails: jest.fn()
+  createPantryDetails: jest.fn(),
+  generatePantryId: jest.fn()
 }));
 
-import { createPantryDetails } from '../../shared/api';
+import { createPantryDetails, generatePantryId } from '../../shared/api';
 
 describe('PantrySetupPage', () => {
   const mockCurrentUser = {
@@ -21,6 +22,7 @@ describe('PantrySetupPage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    generatePantryId.mockResolvedValue({ pantryId: 'ABC12345' });
   });
 
   test('renders pantry setup form', () => {
@@ -59,8 +61,10 @@ describe('PantrySetupPage', () => {
     fireEvent.click(submitButton);
     
     await waitFor(() => {
+      expect(generatePantryId).toHaveBeenCalled();
       expect(createPantryDetails).toHaveBeenCalledWith({
         userId: 'test-user-id',
+        pantryId: 'ABC12345',
         pantryName: 'My Kitchen',
         pantryType: 'Household'
       });
@@ -114,5 +118,29 @@ describe('PantrySetupPage', () => {
     expect(options).toHaveLength(3); // Including the default "Select pantry type" option
     expect(options[1]).toHaveValue('Household');
     expect(options[2]).toHaveValue('Hotel');
+  });
+
+  test('generates pantry ID during form submission', async () => {
+    createPantryDetails.mockResolvedValueOnce({});
+    
+    render(<PantrySetupPage currentUser={mockCurrentUser} onComplete={mockOnComplete} />);
+    
+    const pantryNameInput = screen.getByLabelText('Pantry Name');
+    const pantryTypeSelect = screen.getByLabelText('Pantry Type');
+    const submitButton = screen.getByText('Complete Setup');
+    
+    fireEvent.change(pantryNameInput, { target: { value: 'My Kitchen' } });
+    fireEvent.change(pantryTypeSelect, { target: { value: 'Household' } });
+    fireEvent.click(submitButton);
+    
+    await waitFor(() => {
+      expect(generatePantryId).toHaveBeenCalledTimes(1);
+      expect(createPantryDetails).toHaveBeenCalledWith({
+        userId: 'test-user-id',
+        pantryId: 'ABC12345',
+        pantryName: 'My Kitchen',
+        pantryType: 'Household'
+      });
+    });
   });
 }); 

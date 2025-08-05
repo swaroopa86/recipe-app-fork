@@ -2,6 +2,7 @@ const fs = require('fs');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = 3001;
@@ -50,6 +51,7 @@ const db = new sqlite3.Database(`${dbPath}/recipe_app.db`, (err) => {
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS pantryDetails (
         userId TEXT PRIMARY KEY,
+        pantryId TEXT UNIQUE,
         pantryName TEXT,
         pantryType TEXT,
         createdAt TEXT
@@ -94,6 +96,40 @@ const dbGet = (query, params = []) => {
       }
     });
   });
+};
+
+// Function to generate unique pantry ID
+const generatePantryId = () => {
+  // Generate a random 8-character alphanumeric string
+  return crypto.randomBytes(4).toString('hex').toUpperCase();
+};
+
+// Function to check if pantry ID already exists
+const isPantryIdUnique = async (pantryId) => {
+  try {
+    const existing = await dbGet('SELECT pantryId FROM pantryDetails WHERE pantryId = ?', [pantryId]);
+    return !existing;
+  } catch (err) {
+    console.error('Error checking pantry ID uniqueness:', err);
+    return false;
+  }
+};
+
+// Function to generate a unique pantry ID
+const generateUniquePantryId = async () => {
+  let pantryId;
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  do {
+    pantryId = generatePantryId();
+    attempts++;
+    if (attempts > maxAttempts) {
+      throw new Error('Unable to generate unique pantry ID after maximum attempts');
+    }
+  } while (!(await isPantryIdUnique(pantryId)));
+  
+  return pantryId;
 };
 
 // API Endpoints for Recipes
@@ -316,14 +352,23 @@ app.get('/api/pantryDetails/:userId', async (req, res) => {
   }
 });
 
+app.get('/api/generatePantryId', async (req, res) => {
+  try {
+    const pantryId = await generateUniquePantryId();
+    res.json({ pantryId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/pantryDetails', async (req, res) => {
-  const { userId, pantryName, pantryType } = req.body;
+  const { userId, pantryId, pantryName, pantryType } = req.body;
   try {
     await dbRun(
-      'INSERT INTO pantryDetails (userId, pantryName, pantryType, createdAt) VALUES (?, ?, ?, ?)',
-      [userId, pantryName, pantryType, new Date().toISOString()]
+      'INSERT INTO pantryDetails (userId, pantryId, pantryName, pantryType, createdAt) VALUES (?, ?, ?, ?, ?)',
+      [userId, pantryId, pantryName, pantryType, new Date().toISOString()]
     );
-    res.status(201).json({ userId, pantryName, pantryType });
+    res.status(201).json({ userId, pantryId, pantryName, pantryType });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -331,13 +376,13 @@ app.post('/api/pantryDetails', async (req, res) => {
 
 app.put('/api/pantryDetails/:userId', async (req, res) => {
   const { userId } = req.params;
-  const { pantryName, pantryType } = req.body;
+  const { pantryId, pantryName, pantryType } = req.body;
   try {
     await dbRun(
-      'UPDATE pantryDetails SET pantryName = ?, pantryType = ? WHERE userId = ?',
-      [pantryName, pantryType, userId]
+      'UPDATE pantryDetails SET pantryId = ?, pantryName = ?, pantryType = ? WHERE userId = ?',
+      [pantryId, pantryName, pantryType, userId]
     );
-    res.json({ userId, pantryName, pantryType });
+    res.json({ userId, pantryId, pantryName, pantryType });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
