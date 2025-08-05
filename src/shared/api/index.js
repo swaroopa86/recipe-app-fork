@@ -49,3 +49,8 @@ export const fetchShoppingList = async () => callApi('/shoppingList');
 export const createShoppingListItem = async (item) => callApi('/shoppingList', 'POST', item);
 export const updateShoppingListItem = async (item) => callApi(`/shoppingList/${item.id}`, 'PUT', item);
 export const deleteShoppingListItem = async (id) => callApi(`/shoppingList/${id}`, 'DELETE');
+
+// Pantry Details API
+export const fetchPantryDetails = async (userId) => callApi(`/pantryDetails/${userId}`);
+export const createPantryDetails = async (pantryDetails) => callApi('/pantryDetails', 'POST', pantryDetails);
+export const updatePantryDetails = async (pantryDetails) => callApi(`/pantryDetails/${pantryDetails.userId}`, 'PUT', pantryDetails);

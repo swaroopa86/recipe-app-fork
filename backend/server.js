@@ -9,11 +9,12 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Ensure the /app/db directory exists (for Docker bind mount)
-fs.mkdirSync('/app/db', { recursive: true });
+// Ensure the db directory exists (for local development)
+const dbPath = process.env.NODE_ENV === 'production' ? '/app/db' : './db';
+fs.mkdirSync(dbPath, { recursive: true });
 
 // Connect to SQLite database (or create it if it doesn't exist)
-const db = new sqlite3.Database('/app/db/recipe_app.db', (err) => {
+const db = new sqlite3.Database(`${dbPath}/recipe_app.db`, (err) => {
   if (err) {
     console.error('Error connecting to database:', err.message);
   } else {
@@ -43,6 +44,12 @@ const db = new sqlite3.Database('/app/db/recipe_app.db', (err) => {
         name TEXT,
         quantity TEXT,
         unit TEXT
+      )`);
+      db.run(`CREATE TABLE IF NOT EXISTS pantryDetails (
+        userId TEXT PRIMARY KEY,
+        pantryName TEXT,
+        pantryType TEXT,
+        createdAt TEXT
       )`);
       console.log('Tables created or already exist.');
     });
@@ -286,6 +293,44 @@ app.delete('/api/shoppingList/:id', async (req, res) => {
   try {
     await dbRun('DELETE FROM shoppingList WHERE id = ?', id);
     res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API Endpoints for Pantry Details
+app.get('/api/pantryDetails/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const pantryDetails = await dbGet('SELECT * FROM pantryDetails WHERE userId = ?', [userId]);
+    res.json(pantryDetails);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/pantryDetails', async (req, res) => {
+  const { userId, pantryName, pantryType } = req.body;
+  try {
+    await dbRun(
+      'INSERT INTO pantryDetails (userId, pantryName, pantryType, createdAt) VALUES (?, ?, ?, ?)',
+      [userId, pantryName, pantryType, new Date().toISOString()]
+    );
+    res.status(201).json({ userId, pantryName, pantryType });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/pantryDetails/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const { pantryName, pantryType } = req.body;
+  try {
+    await dbRun(
+      'UPDATE pantryDetails SET pantryName = ?, pantryType = ? WHERE userId = ?',
+      [pantryName, pantryType, userId]
+    );
+    res.json({ userId, pantryName, pantryType });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
-import { fetchRecipes, fetchUsers, fetchPantryItems } from '../shared/api';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot } from '../features';
+import { fetchRecipes, fetchUsers, fetchPantryItems, fetchPantryDetails } from '../shared/api';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, PantrySetupPage, Chatbot } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 
@@ -13,13 +13,27 @@ function App() {
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
   const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', or 'shopping-list'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+  const [pantryDetails, setPantryDetails] = useState(null);
+  const [showPantrySetup, setShowPantrySetup] = useState(false);
 
-    const handleLogin = (user) => {
+    const handleLogin = async (user) => {
     setCurrentUser(user);
+    
+    // Check if user has pantry details
+    try {
+      const details = await fetchPantryDetails(user.id);
+      setPantryDetails(details);
+      setShowPantrySetup(false);
+    } catch (error) {
+      // If no pantry details found, show setup page
+      setShowPantrySetup(true);
+    }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setPantryDetails(null);
+    setShowPantrySetup(false);
   };
 
   const refreshRecipes = useCallback(async () => {
@@ -41,12 +55,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !showPantrySetup) {
       refreshRecipes();
       refreshUsers();
       refreshPantryItems();
     }
-  }, [currentUser, refreshRecipes, refreshUsers, refreshPantryItems]);
+  }, [currentUser, showPantrySetup, refreshRecipes, refreshUsers, refreshPantryItems]);
 
   // If user is not logged in, show login page
   if (!currentUser) {
@@ -54,6 +68,20 @@ function App() {
       <GoogleOAuthProvider clientId={getDecryptedGoogleClientId()}>
         <LoginPage onLogin={handleLogin} />
       </GoogleOAuthProvider>
+    );
+  }
+
+  // If user needs to set up pantry details, show setup page
+  if (showPantrySetup) {
+    return (
+      <PantrySetupPage 
+        currentUser={currentUser} 
+        onComplete={() => {
+          setShowPantrySetup(false);
+          // Refresh pantry details after setup
+          fetchPantryDetails(currentUser.id).then(setPantryDetails);
+        }} 
+      />
     );
   }
 
