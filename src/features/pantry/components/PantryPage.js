@@ -151,7 +151,7 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
       setSelectedItems(new Set());
       setShowSuccessMessage(false);
 
-      const text = await handleImageUpload(file, (extractedText) => {
+      await handleImageUpload(file, (extractedText) => {
         setReceiptText(extractedText);
         const items = parseReceiptText(extractedText);
         setParsedItems(items);
@@ -213,13 +213,7 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
   const addSelectedItemsToPantry = useCallback(() => {
     const itemsToAdd = parsedItems.filter(item => selectedItems.has(item.id));
     
-    console.log('Save button clicked!');
-    console.log('Items to add:', itemsToAdd);
-    console.log('Selected items:', Array.from(selectedItems));
-    console.log('Current pantry items:', pantryItems);
-    
     if (itemsToAdd.length === 0) {
-      console.log('No items selected');
       return;
     }
     
@@ -228,11 +222,9 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
     
     // Merge with existing pantry items (combine quantities if same name and unit)
     setPantryItems(prev => {
-      console.log('Previous pantry items:', prev);
       const newItems = [...prev];
       
       itemsToAdd.forEach(receiptItem => {
-        console.log('Processing item:', receiptItem);
         const existingIndex = newItems.findIndex(
           item => item.name.toLowerCase() === receiptItem.name.toLowerCase() && 
                  item.unit === receiptItem.unit
@@ -247,7 +239,6 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
             quantity: (existingQuantity + newQuantity).toString()
           };
           updatedCount++;
-          console.log('Updated existing item:', newItems[existingIndex]);
         } else {
           // Add as new item
           const newPantryItem = {
@@ -256,11 +247,9 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
           };
           newItems.push(newPantryItem);
           addedCount++;
-          console.log('Added new item:', newPantryItem);
         }
       });
       
-      console.log('Final pantry items:', newItems);
       return newItems;
     });
     
@@ -273,7 +262,6 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
       message += ` (${updatedCount} updated with new quantities)`;
     }
     
-    console.log('Success message:', message);
     setSuccessMessage(message);
     setShowSuccessMessage(true);
     
