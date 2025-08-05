@@ -134,7 +134,7 @@ function getCategoryTag(ingredientName) {
 }
 
 // --- Main Component ---
-const RecipesPage = ({ recipes, setRecipes, users }) => {
+const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
   const [currentRecipe, setCurrentRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -146,23 +146,11 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
   });
 
   const [showForm, setShowForm] = useState(false);
-  const [macrosByRecipe, setMacrosByRecipe] = useState({});
   const [error, setError] = useState('');
   const [ingredientSuggestions, setIngredientSuggestions] = useState([]);
   const [suggestionIndex, setSuggestionIndex] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
-
-  useEffect(() => {
-    async function fetchAllMacros() {
-      const macrosObj = {};
-      for (const recipe of recipes) {
-        macrosObj[recipe.id] = await getMacros(recipe.ingredients);
-      }
-      setMacrosByRecipe(macrosObj);
-    }
-    fetchAllMacros();
-  }, [recipes]);
 
   const handleNameChange = useCallback((e) => {
     const value = e.target.value;
@@ -666,4 +654,5 @@ const RecipesPage = ({ recipes, setRecipes, users }) => {
   );
 };
 
+export { getMacros };
 export default RecipesPage;

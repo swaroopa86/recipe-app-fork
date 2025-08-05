@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage, userSerializer } from '../shared';
 import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, Chatbot, CaloricGoalPage } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
+import { getMacros } from '../features/recipes/components/RecipesPage';
 
 function App() {
   const [recipes, setRecipes] = useLocalStorage('recipes', []);
@@ -12,6 +13,7 @@ function App() {
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
   const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'user-details'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+  const [macrosByRecipe, setMacrosByRecipe] = useState({});
 
   const handleLogin = (user) => {
     setCurrentUser(user);
@@ -20,6 +22,17 @@ function App() {
   const handleLogout = () => {
     setCurrentUser(null);
   };
+
+  useEffect(() => {
+    async function fetchAllMacros() {
+      const macrosObj = {};
+      for (const recipe of recipes) {
+        macrosObj[recipe.id] = await getMacros(recipe.ingredients);
+      }
+      setMacrosByRecipe(macrosObj);
+    }
+    fetchAllMacros();
+  }, [recipes]);
 
   // If user is not logged in, show login page
   if (!currentUser) {
@@ -112,16 +125,22 @@ function App() {
 
       <main className="App-main single-column-layout">
         {currentPage === 'recipes' && (
-          <RecipesPage recipes={recipes} setRecipes={setRecipes} users={users} />
+          <RecipesPage
+            recipes={recipes}
+            setRecipes={setRecipes}
+            users={users}
+            macrosByRecipe={macrosByRecipe}
+          />
         )}
         {currentPage === 'cooking-for' && (
-          <CookingForPage 
-            recipes={recipes} 
-            users={users} 
-            pantryItems={pantryItems} 
+          <CookingForPage
+            recipes={recipes}
+            users={users}
+            pantryItems={pantryItems}
             setPantryItems={setPantryItems}
             shoppingList={shoppingList}
             setShoppingList={setShoppingList}
+            macrosByRecipe={macrosByRecipe}
           />
         )}
         {currentPage === 'pantry' && (
