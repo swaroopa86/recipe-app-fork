@@ -156,9 +156,6 @@ function App() {
         {currentPage === 'user-details' && (
           <UserDetailsPage currentUser={currentUser} />
         )}
-        {currentPage === 'user-details' && (
-          <UserDetailsPage currentUser={currentUser} />
-        )}
       </main>
       <Chatbot />
     </div>
