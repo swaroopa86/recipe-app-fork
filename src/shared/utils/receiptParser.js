@@ -203,7 +203,10 @@ export const parseReceiptText = (text) => {
             quantity: item.quantity,
             unit: item.unit,
             ...(item.price !== undefined ? { price: item.price } : {})
-          });
+          };
+          
+          items.push(newItem);
+          console.log(`  🎯 Added item:`, newItem);
           matched = true;
           break;
         } else {

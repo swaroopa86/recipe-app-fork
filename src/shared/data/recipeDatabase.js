@@ -1,22 +1,22 @@
-// Pre-built recipe database for automatic suggestions
-export const RECIPE_DATABASE = [
+// Recipe database with pre-built recipes for automatic suggestions
+const RECIPE_DATABASE = [
   {
     id: 'pancakes-001',
     name: 'Classic Pancakes',
-    cookingTime: '20 minutes',
+    cookingTime: '15 minutes',
     difficulty: 'Easy',
     servings: 4,
     category: 'Breakfast',
     ingredients: [
-      { name: 'flour', quantity: '2', unit: 'cups', alternatives: ['all-purpose flour', 'wheat flour', 'plain flour', 'white flour'] },
-      { name: 'milk', quantity: '1.5', unit: 'cups', alternatives: ['whole milk', 'dairy milk', 'fresh milk', '2% milk', 'skim milk'] },
-      { name: 'eggs', quantity: '2', unit: 'pieces', alternatives: ['chicken eggs', 'fresh eggs', 'large eggs'] },
-      { name: 'sugar', quantity: '2', unit: 'tablespoons', alternatives: ['white sugar', 'granulated sugar', 'caster sugar'] },
+      { name: 'flour', quantity: '2', unit: 'cups', alternatives: ['all-purpose flour', 'wheat flour', 'plain flour'] },
+      { name: 'milk', quantity: '1.5', unit: 'cups', alternatives: ['whole milk', 'skim milk', '2% milk', 'dairy milk'] },
+      { name: 'eggs', quantity: '2', unit: 'large', alternatives: ['large eggs', 'medium eggs', 'fresh eggs'] },
+      { name: 'sugar', quantity: '2', unit: 'tablespoons', alternatives: ['white sugar', 'granulated sugar', 'cane sugar'] },
       { name: 'baking powder', quantity: '2', unit: 'teaspoons', alternatives: ['baking soda'] },
-      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['table salt', 'sea salt'] },
-      { name: 'butter', quantity: '2', unit: 'tablespoons', alternatives: ['melted butter', 'salted butter', 'unsalted butter'] }
+      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['sea salt', 'table salt'] },
+      { name: 'butter', quantity: '4', unit: 'tablespoons', alternatives: ['salted butter', 'unsalted butter'] }
     ],
-    method: 'Mix dry ingredients in a bowl. In another bowl, whisk milk, eggs, and melted butter. Combine wet and dry ingredients until just mixed. Cook on griddle over medium heat until bubbles form, then flip.'
+    method: 'Mix dry ingredients. Whisk wet ingredients separately. Combine until just mixed. Cook on griddle until bubbles form, flip and cook until golden.'
   },
   {
     id: 'scrambled-eggs-001',
@@ -26,98 +26,94 @@ export const RECIPE_DATABASE = [
     servings: 2,
     category: 'Breakfast',
     ingredients: [
-      { name: 'eggs', quantity: '4', unit: 'pieces', alternatives: ['chicken eggs', 'fresh eggs', 'large eggs'] },
-      { name: 'milk', quantity: '2', unit: 'tablespoons', alternatives: ['cream', 'dairy milk', 'whole milk', 'heavy cream'] },
+      { name: 'eggs', quantity: '4', unit: 'large', alternatives: ['large eggs', 'medium eggs', 'fresh eggs'] },
+      { name: 'milk', quantity: '2', unit: 'tablespoons', alternatives: ['whole milk', 'cream', 'half and half'] },
       { name: 'butter', quantity: '1', unit: 'tablespoon', alternatives: ['salted butter', 'unsalted butter'] },
-      { name: 'salt', quantity: '1', unit: 'pinch', alternatives: ['table salt', 'sea salt'] },
+      { name: 'salt', quantity: '1', unit: 'pinch', alternatives: ['sea salt', 'table salt'] },
       { name: 'pepper', quantity: '1', unit: 'pinch', alternatives: ['black pepper', 'ground pepper'] }
     ],
-    method: 'Beat eggs with milk, salt, and pepper. Heat butter in pan over low heat. Add eggs and gently stir constantly until creamy and set.'
+    method: 'Beat eggs with milk, salt and pepper. Melt butter in pan over medium-low heat. Add eggs and gently stir continuously until just set.'
   },
   {
     id: 'pasta-marinara-001',
     name: 'Pasta Marinara',
-    cookingTime: '25 minutes',
+    cookingTime: '20 minutes',
     difficulty: 'Easy',
     servings: 4,
     category: 'Dinner',
     ingredients: [
-      { name: 'pasta', quantity: '1', unit: 'pound', alternatives: ['spaghetti', 'penne', 'linguine', 'noodles', 'macaroni'] },
-      { name: 'tomatoes', quantity: '1', unit: 'can', alternatives: ['canned tomatoes', 'tomato sauce', 'crushed tomatoes', 'diced tomatoes', 'tomato paste'] },
-      { name: 'garlic', quantity: '3', unit: 'cloves', alternatives: ['garlic powder', 'minced garlic', 'fresh garlic'] },
-      { name: 'onion', quantity: '1', unit: 'medium', alternatives: ['yellow onion', 'white onion', 'red onion', 'onions'] },
-      { name: 'olive oil', quantity: '2', unit: 'tablespoons', alternatives: ['oil', 'cooking oil', 'vegetable oil'] },
-      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['table salt', 'sea salt'] },
-      { name: 'basil', quantity: '1', unit: 'teaspoon', alternatives: ['dried basil', 'fresh basil', 'herbs'] }
+      { name: 'pasta', quantity: '1', unit: 'pound', alternatives: ['spaghetti', 'penne', 'macaroni', 'noodles'] },
+      { name: 'tomatoes', quantity: '1', unit: 'can', alternatives: ['canned tomatoes', 'crushed tomatoes', 'tomato sauce'] },
+      { name: 'garlic', quantity: '3', unit: 'cloves', alternatives: ['minced garlic', 'garlic powder', 'fresh garlic'] },
+      { name: 'onion', quantity: '1', unit: 'medium', alternatives: ['yellow onion', 'white onion', 'sweet onion'] },
+      { name: 'olive oil', quantity: '2', unit: 'tablespoons', alternatives: ['oil', 'vegetable oil'] },
+      { name: 'basil', quantity: '1', unit: 'teaspoon', alternatives: ['dried basil', 'fresh basil', 'italian seasoning'] },
+      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['sea salt', 'table salt'] }
     ],
-    method: 'Cook pasta according to package directions. Heat olive oil, sauté onion and garlic. Add tomatoes, salt, and basil. Simmer 15 minutes. Toss with cooked pasta.'
+    method: 'Cook pasta according to package directions. Sauté onion and garlic in oil. Add tomatoes, basil, salt and simmer. Serve over pasta.'
   },
   {
     id: 'french-toast-001',
     name: 'French Toast',
-    cookingTime: '15 minutes',
+    cookingTime: '10 minutes',
     difficulty: 'Easy',
     servings: 4,
     category: 'Breakfast',
     ingredients: [
-      { name: 'bread', quantity: '8', unit: 'slices', alternatives: ['white bread', 'brioche', 'challah'] },
-      { name: 'eggs', quantity: '3', unit: 'pieces', alternatives: ['chicken eggs'] },
-      { name: 'milk', quantity: '1/2', unit: 'cup', alternatives: ['whole milk', 'cream'] },
-      { name: 'vanilla', quantity: '1', unit: 'teaspoon', alternatives: ['vanilla extract'] },
-      { name: 'cinnamon', quantity: '1/2', unit: 'teaspoon', alternatives: ['ground cinnamon'] },
-      { name: 'butter', quantity: '2', unit: 'tablespoons' }
+      { name: 'bread', quantity: '8', unit: 'slices', alternatives: ['white bread', 'whole grain bread', 'brioche', 'challah'] },
+      { name: 'eggs', quantity: '4', unit: 'large', alternatives: ['large eggs', 'medium eggs'] },
+      { name: 'milk', quantity: '1/2', unit: 'cup', alternatives: ['whole milk', 'cream', 'half and half'] },
+      { name: 'sugar', quantity: '1', unit: 'tablespoon', alternatives: ['white sugar', 'brown sugar'] },
+      { name: 'butter', quantity: '2', unit: 'tablespoons', alternatives: ['salted butter', 'unsalted butter'] }
     ],
-    method: 'Whisk eggs, milk, vanilla, and cinnamon. Dip bread slices in mixture. Cook in buttered pan over medium heat until golden brown on both sides.'
+    method: 'Whisk eggs, milk, and sugar. Dip bread slices in mixture. Cook in buttered pan until golden brown on both sides.'
   },
   {
     id: 'grilled-cheese-001',
     name: 'Grilled Cheese Sandwich',
-    cookingTime: '10 minutes',
+    cookingTime: '8 minutes',
     difficulty: 'Easy',
     servings: 2,
     category: 'Lunch',
     ingredients: [
-      { name: 'bread', quantity: '4', unit: 'slices', alternatives: ['white bread', 'sourdough', 'wheat bread', 'sandwich bread'] },
-      { name: 'cheese', quantity: '4', unit: 'slices', alternatives: ['cheddar cheese', 'american cheese', 'swiss cheese', 'sliced cheese'] },
+      { name: 'bread', quantity: '4', unit: 'slices', alternatives: ['white bread', 'sourdough', 'whole grain'] },
+      { name: 'cheese', quantity: '4', unit: 'slices', alternatives: ['cheddar', 'american cheese', 'swiss'] },
       { name: 'butter', quantity: '2', unit: 'tablespoons', alternatives: ['salted butter', 'unsalted butter'] }
     ],
-    method: 'Butter one side of each bread slice. Place cheese between unbuttered sides. Cook in pan over medium heat until golden and cheese melts, flipping once.'
+    method: 'Butter one side of each bread slice. Place cheese between unbuttered sides. Cook in pan until golden and cheese melts.'
   },
   {
     id: 'rice-pilaf-001',
-    name: 'Simple Rice Pilaf',
+    name: 'Rice Pilaf',
     cookingTime: '25 minutes',
-    difficulty: 'Easy',
-    servings: 4,
+    difficulty: 'Medium',
+    servings: 6,
     category: 'Side Dish',
     ingredients: [
-      { name: 'rice', quantity: '1', unit: 'cup', alternatives: ['white rice', 'long grain rice'] },
+      { name: 'rice', quantity: '1', unit: 'cup', alternatives: ['white rice', 'long grain rice', 'basmati'] },
       { name: 'chicken broth', quantity: '2', unit: 'cups', alternatives: ['vegetable broth', 'stock'] },
-      { name: 'onion', quantity: '1', unit: 'small', alternatives: ['yellow onion'] },
-      { name: 'butter', quantity: '2', unit: 'tablespoons' },
-      { name: 'salt', quantity: '1/2', unit: 'teaspoon' },
-      { name: 'pepper', quantity: '1/4', unit: 'teaspoon', alternatives: ['black pepper'] }
+      { name: 'onion', quantity: '1', unit: 'small', alternatives: ['yellow onion', 'shallot'] },
+      { name: 'butter', quantity: '2', unit: 'tablespoons', alternatives: ['oil', 'olive oil'] },
+      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['sea salt'] }
     ],
-    method: 'Sauté onion in butter until soft. Add rice and stir 2 minutes. Add broth, salt, and pepper. Bring to boil, reduce heat, cover and simmer 18 minutes.'
+    method: 'Sauté onion in butter. Add rice and toast 2 minutes. Add broth and salt, bring to boil. Cover and simmer 18 minutes.'
   },
   {
     id: 'chicken-soup-001',
-    name: 'Basic Chicken Soup',
+    name: 'Simple Chicken Soup',
     cookingTime: '45 minutes',
     difficulty: 'Medium',
     servings: 6,
     category: 'Soup',
     ingredients: [
       { name: 'chicken', quantity: '1', unit: 'pound', alternatives: ['chicken breast', 'chicken thighs'] },
-      { name: 'carrots', quantity: '2', unit: 'large', alternatives: ['baby carrots'] },
-      { name: 'celery', quantity: '2', unit: 'stalks' },
+      { name: 'carrots', quantity: '2', unit: 'large', alternatives: ['baby carrots', 'carrot'] },
+      { name: 'celery', quantity: '2', unit: 'stalks', alternatives: ['celery stalk'] },
       { name: 'onion', quantity: '1', unit: 'medium', alternatives: ['yellow onion'] },
-      { name: 'chicken broth', quantity: '6', unit: 'cups', alternatives: ['stock'] },
-      { name: 'noodles', quantity: '1', unit: 'cup', alternatives: ['egg noodles', 'pasta'] },
-      { name: 'salt', quantity: '1', unit: 'teaspoon' },
-      { name: 'pepper', quantity: '1/2', unit: 'teaspoon', alternatives: ['black pepper'] }
+      { name: 'chicken broth', quantity: '6', unit: 'cups', alternatives: ['stock', 'vegetable broth'] },
+      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['sea salt'] }
     ],
-    method: 'Simmer chicken in broth 25 minutes. Remove chicken, shred when cool. Add vegetables to broth, cook 10 minutes. Add noodles, cook until tender. Return chicken to pot, season.'
+    method: 'Simmer chicken in broth until cooked. Remove and shred. Sauté vegetables, return chicken to pot. Season and simmer 20 minutes.'
   },
   {
     id: 'banana-smoothie-001',
@@ -127,13 +123,12 @@ export const RECIPE_DATABASE = [
     servings: 2,
     category: 'Beverage',
     ingredients: [
-      { name: 'bananas', quantity: '2', unit: 'large', alternatives: ['ripe bananas'] },
-      { name: 'milk', quantity: '1', unit: 'cup', alternatives: ['dairy milk', 'almond milk'] },
-      { name: 'yogurt', quantity: '1/2', unit: 'cup', alternatives: ['greek yogurt', 'vanilla yogurt'] },
-      { name: 'honey', quantity: '1', unit: 'tablespoon', alternatives: ['maple syrup', 'sugar'] },
-      { name: 'ice', quantity: '1/2', unit: 'cup' }
+      { name: 'bananas', quantity: '2', unit: 'large', alternatives: ['banana', 'ripe bananas'] },
+      { name: 'yogurt', quantity: '1', unit: 'cup', alternatives: ['greek yogurt', 'plain yogurt'] },
+      { name: 'milk', quantity: '1/2', unit: 'cup', alternatives: ['almond milk', 'coconut milk'] },
+      { name: 'honey', quantity: '2', unit: 'tablespoons', alternatives: ['maple syrup', 'sugar'] }
     ],
-    method: 'Combine all ingredients in blender. Blend until smooth and creamy. Adjust sweetness to taste. Serve immediately.'
+    method: 'Blend all ingredients until smooth. Add ice if desired. Serve immediately.'
   },
   {
     id: 'tuna-salad-001',
@@ -143,25 +138,23 @@ export const RECIPE_DATABASE = [
     servings: 4,
     category: 'Lunch',
     ingredients: [
-      { name: 'tuna', quantity: '2', unit: 'cans', alternatives: ['canned tuna'] },
-      { name: 'mayonnaise', quantity: '1/3', unit: 'cup', alternatives: ['mayo'] },
-      { name: 'celery', quantity: '2', unit: 'stalks' },
-      { name: 'onion', quantity: '1/4', unit: 'cup', alternatives: ['red onion', 'green onion'] },
-      { name: 'lemon juice', quantity: '1', unit: 'tablespoon' },
-      { name: 'salt', quantity: '1/2', unit: 'teaspoon' },
-      { name: 'pepper', quantity: '1/4', unit: 'teaspoon', alternatives: ['black pepper'] }
+      { name: 'tuna', quantity: '2', unit: 'cans', alternatives: ['canned tuna', 'tuna in water'] },
+      { name: 'mayonnaise', quantity: '1/4', unit: 'cup', alternatives: ['mayo'] },
+      { name: 'celery', quantity: '1', unit: 'stalk', alternatives: ['diced celery'] },
+      { name: 'onion', quantity: '2', unit: 'tablespoons', alternatives: ['red onion', 'green onion'] },
+      { name: 'lemon', quantity: '1', unit: 'tablespoon', alternatives: ['lemon juice', 'lime juice'] }
     ],
-    method: 'Drain tuna and flake with fork. Mix with mayonnaise, diced celery, onion, lemon juice, salt, and pepper. Chill before serving.'
+    method: 'Drain tuna and flake. Mix with mayo, diced celery, onion, and lemon juice. Season with salt and pepper.'
   },
   {
     id: 'caesar-salad-001',
     name: 'Caesar Salad',
     cookingTime: '15 minutes',
-    difficulty: 'Easy',
+    difficulty: 'Medium',
     servings: 4,
     category: 'Salad',
     ingredients: [
-      { name: 'lettuce', quantity: '1', unit: 'head', alternatives: ['romaine lettuce'] },
+      { name: 'lettuce', quantity: '1', unit: 'head', alternatives: ['romaine lettuce', 'romaine'] },
       { name: 'parmesan cheese', quantity: '1/2', unit: 'cup', alternatives: ['grated parmesan'] },
       { name: 'croutons', quantity: '1', unit: 'cup', alternatives: ['bread cubes'] },
       { name: 'caesar dressing', quantity: '1/4', unit: 'cup', alternatives: ['salad dressing'] },
@@ -342,93 +335,93 @@ export const findMatchingRecipes = (pantryItems) => {
 
   RECIPE_DATABASE.forEach(recipe => {
     const ingredientMatches = recipe.ingredients.map(ingredient => {
-              // Check if any pantry item matches this recipe ingredient
-        const pantryMatch = pantryItems.find(pantryItem => {
-          const pantryName = pantryItem.name.toLowerCase().trim();
-          const ingredientName = ingredient.name.toLowerCase().trim();
-          
-          console.log(`🔍 Checking pantry "${pantryName}" against recipe ingredient "${ingredientName}"`);
-          
-          // Direct match
-          if (pantryName === ingredientName) {
-            console.log(`✅ Direct match: "${pantryName}" === "${ingredientName}"`);
-            return true;
-          }
-          
-          // Check if pantry item contains ingredient name or vice versa
-          if (pantryName.includes(ingredientName) || ingredientName.includes(pantryName)) {
-            console.log(`✅ Partial match: "${pantryName}" <-> "${ingredientName}"`);
-            return true;
-          }
-          
-          // Special grocery receipt matching - common grocery item names
-          const groceryMatches = {
-            'milk': ['whole milk', 'skim milk', '2% milk', 'low fat milk', 'dairy milk'],
-            'bread': ['white bread', 'wheat bread', 'whole grain bread', 'sandwich bread', 'loaf bread'],
-            'cheese': ['cheddar cheese', 'american cheese', 'swiss cheese', 'mozzarella cheese', 'sliced cheese'],
-            'butter': ['salted butter', 'unsalted butter', 'sweet butter'],
-            'eggs': ['large eggs', 'medium eggs', 'free range eggs', 'organic eggs'],
-            'flour': ['all purpose flour', 'wheat flour', 'white flour'],
-            'sugar': ['white sugar', 'granulated sugar', 'cane sugar'],
-            'oil': ['vegetable oil', 'canola oil', 'cooking oil'],
-            'bananas': ['banana', 'fresh bananas', 'ripe bananas'],
-            'apples': ['apple', 'red apples', 'green apples', 'fresh apples'],
-            'oranges': ['orange', 'fresh oranges', 'navel oranges'],
-            'potatoes': ['potato', 'russet potatoes', 'red potatoes', 'fresh potatoes'],
-            'onion': ['yellow onion', 'white onion', 'red onion', 'sweet onion', 'onions'],
-            'garlic': ['fresh garlic', 'garlic bulb'],
-            'carrots': ['carrot', 'fresh carrots', 'baby carrots'],
-            'tomatoes': ['tomato', 'fresh tomatoes', 'vine tomatoes'],
-            'lettuce': ['iceberg lettuce', 'romaine lettuce', 'fresh lettuce'],
-            'chicken': ['chicken breast', 'chicken thighs', 'fresh chicken', 'whole chicken'],
-            'beef': ['ground beef', 'beef chuck', 'lean beef'],
-            'pasta': ['spaghetti', 'penne pasta', 'macaroni', 'noodles'],
-            'rice': ['white rice', 'brown rice', 'long grain rice']
-          };
-          
-          // Check if pantry item matches any grocery-style names for this ingredient
-          if (groceryMatches[ingredientName]) {
-            const groceryMatch = groceryMatches[ingredientName].some(grocery => {
-              const groceryName = grocery.toLowerCase().trim();
-              if (pantryName === groceryName || 
-                  pantryName.includes(groceryName) ||
-                  groceryName.includes(pantryName)) {
-                console.log(`✅ Grocery match: "${pantryName}" matches "${groceryName}" for ${ingredientName}`);
-                return true;
-              }
-              return false;
-            });
-            if (groceryMatch) return true;
-          }
-          
-          // Reverse check - see if any grocery items for pantry name match the ingredient
-          for (const [recipeIngredient, groceryNames] of Object.entries(groceryMatches)) {
-            if (groceryNames.some(grocery => grocery.toLowerCase().includes(pantryName) || pantryName.includes(grocery.toLowerCase()))) {
-              if (recipeIngredient === ingredientName) {
-                console.log(`✅ Reverse grocery match: pantry "${pantryName}" matches ingredient "${ingredientName}"`);
-                return true;
-              }
+      // Check if any pantry item matches this recipe ingredient
+      const pantryMatch = pantryItems.find(pantryItem => {
+        const pantryName = pantryItem.name.toLowerCase().trim();
+        const ingredientName = ingredient.name.toLowerCase().trim();
+        
+        console.log(`🔍 Checking pantry "${pantryName}" against recipe ingredient "${ingredientName}"`);
+        
+        // Direct match
+        if (pantryName === ingredientName) {
+          console.log(`✅ Direct match: "${pantryName}" === "${ingredientName}"`);
+          return true;
+        }
+        
+        // Check if pantry item contains ingredient name or vice versa
+        if (pantryName.includes(ingredientName) || ingredientName.includes(pantryName)) {
+          console.log(`✅ Partial match: "${pantryName}" <-> "${ingredientName}"`);
+          return true;
+        }
+        
+        // Special grocery receipt matching - common grocery item names
+        const groceryMatches = {
+          'milk': ['whole milk', 'skim milk', '2% milk', 'low fat milk', 'dairy milk'],
+          'bread': ['white bread', 'wheat bread', 'whole grain bread', 'sandwich bread', 'loaf bread'],
+          'cheese': ['cheddar cheese', 'american cheese', 'swiss cheese', 'mozzarella cheese', 'sliced cheese'],
+          'butter': ['salted butter', 'unsalted butter', 'sweet butter'],
+          'eggs': ['large eggs', 'medium eggs', 'free range eggs', 'organic eggs'],
+          'flour': ['all purpose flour', 'wheat flour', 'white flour'],
+          'sugar': ['white sugar', 'granulated sugar', 'cane sugar'],
+          'oil': ['vegetable oil', 'canola oil', 'cooking oil'],
+          'bananas': ['banana', 'fresh bananas', 'ripe bananas'],
+          'apples': ['apple', 'red apples', 'green apples', 'fresh apples'],
+          'oranges': ['orange', 'fresh oranges', 'navel oranges'],
+          'potatoes': ['potato', 'russet potatoes', 'red potatoes', 'fresh potatoes'],
+          'onion': ['yellow onion', 'white onion', 'red onion', 'sweet onion', 'onions'],
+          'garlic': ['fresh garlic', 'garlic bulb'],
+          'carrots': ['carrot', 'fresh carrots', 'baby carrots'],
+          'tomatoes': ['tomato', 'fresh tomatoes', 'vine tomatoes'],
+          'lettuce': ['iceberg lettuce', 'romaine lettuce', 'fresh lettuce'],
+          'chicken': ['chicken breast', 'chicken thighs', 'fresh chicken', 'whole chicken'],
+          'beef': ['ground beef', 'beef chuck', 'lean beef'],
+          'pasta': ['spaghetti', 'penne pasta', 'macaroni', 'noodles'],
+          'rice': ['white rice', 'brown rice', 'long grain rice']
+        };
+        
+        // Check if pantry item matches any grocery-style names for this ingredient
+        if (groceryMatches[ingredientName]) {
+          const groceryMatch = groceryMatches[ingredientName].some(grocery => {
+            const groceryName = grocery.toLowerCase().trim();
+            if (pantryName === groceryName || 
+                pantryName.includes(groceryName) ||
+                groceryName.includes(pantryName)) {
+              console.log(`✅ Grocery match: "${pantryName}" matches "${groceryName}" for ${ingredientName}`);
+              return true;
+            }
+            return false;
+          });
+          if (groceryMatch) return true;
+        }
+        
+        // Reverse check - see if any grocery items for pantry name match the ingredient
+        for (const [recipeIngredient, groceryNames] of Object.entries(groceryMatches)) {
+          if (groceryNames.some(grocery => grocery.toLowerCase().includes(pantryName) || pantryName.includes(grocery.toLowerCase()))) {
+            if (recipeIngredient === ingredientName) {
+              console.log(`✅ Reverse grocery match: pantry "${pantryName}" matches ingredient "${ingredientName}"`);
+              return true;
             }
           }
-          
-          // Check alternatives
-          if (ingredient.alternatives) {
-            const altMatch = ingredient.alternatives.some(alt => {
-              const altName = alt.toLowerCase().trim();
-              if (pantryName === altName || 
-                  pantryName.includes(altName) ||
-                  altName.includes(pantryName)) {
-                console.log(`✅ Alternative match: "${pantryName}" matches "${altName}" for ${ingredientName}`);
-                return true;
-              }
-              return false;
-            });
-            if (altMatch) return true;
-          }
-          
-          console.log(`❌ No match found for "${pantryName}" vs "${ingredientName}"`);
-          return false;
-        });
+        }
+        
+        // Check alternatives
+        if (ingredient.alternatives) {
+          const altMatch = ingredient.alternatives.some(alt => {
+            const altName = alt.toLowerCase().trim();
+            if (pantryName === altName || 
+                pantryName.includes(altName) ||
+                altName.includes(pantryName)) {
+              console.log(`✅ Alternative match: "${pantryName}" matches "${altName}" for ${ingredientName}`);
+              return true;
+            }
+            return false;
+          });
+          if (altMatch) return true;
+        }
+        
+        console.log(`❌ No match found for "${pantryName}" vs "${ingredientName}"`);
+        return false;
+      });
 
       return {
         ingredient,
