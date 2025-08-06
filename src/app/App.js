@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
 import { fetchRecipes, fetchUsers, fetchPantryItems, fetchShoppingList, fetchPantryDetails, getPendingInvitation } from '../shared/api';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, PantrySetupPage, InviteOthersPage, InvitationResponsePage, Chatbot, CaloricGoalPage } from '../features';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, ReportsPage, PantrySetupPage, InviteOthersPage, InvitationResponsePage, Chatbot, CaloricGoalPage } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 import { getMacros } from '../features/recipes/components/RecipesPage';
@@ -11,8 +11,8 @@ function App() {
   const [recipes, setRecipes] = useState([]);
   const [users, setUsers] = useState([]);
   const [pantryItems, setPantryItems] = useState([]);
-  const [shoppingList, setShoppingList] = useState([]);
-  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'user-details'
+  const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
+  const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'reports', or 'user-details'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
   const [pantryDetails, setPantryDetails] = useState(null);
   const [showPantrySetup, setShowPantrySetup] = useState(false);
@@ -45,12 +45,12 @@ function App() {
           setShowPantrySetup(true);
           setShowInvitationResponse(false);
         }
-      } catch (invitationError) {
-        console.error('Error checking for pending invitations:', invitationError);
-        // Fallback to setup page if invitation check fails
-        setShowPantrySetup(true);
-        setShowInvitationResponse(false);
-      }
+             } catch (invitationError) {
+         // Error checking for pending invitations
+         // Fallback to setup page if invitation check fails
+         setShowPantrySetup(true);
+         setShowInvitationResponse(false);
+       }
     } finally {
       setIsLoadingPantryDetails(false);
     }
@@ -103,7 +103,7 @@ function App() {
     } else {
       setShoppingList([]);
     }
-  }, [pantryDetails?.pantryId]);
+  }, [pantryDetails?.pantryId, setShoppingList]);
 
   useEffect(() => {
     if (currentUser && !showPantrySetup && !showInviteOthers && !showInvitationResponse) {
@@ -150,6 +150,8 @@ function App() {
             setShowInviteOthers(true);
           } catch (error) {
             console.error('Error fetching pantry details after setup:', error);
+            // If fetching fails, still proceed to invite others page
+            setShowInviteOthers(true);
           } finally {
             setIsLoadingPantryDetails(false);
           }
@@ -265,6 +267,13 @@ function App() {
             )}
           </button>
           <button
+            className={`nav-btn ${currentPage === 'reports' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('reports')}
+          >
+            <span className="nav-icon">📊</span>
+            Reports
+          </button>
+          <button
             className={`nav-btn ${currentPage === 'user-details' ? 'active' : ''}`}
             onClick={() => setCurrentPage('user-details')}
           >
@@ -288,6 +297,8 @@ function App() {
             users={users}
             refreshRecipes={refreshRecipes}
             pantryItems={pantryItems}
+            currentUser={currentUser}
+            refreshPantryItems={refreshPantryItems}
             macrosByRecipe={macrosByRecipe}
             pantryDetails={pantryDetails}
           />
@@ -318,6 +329,12 @@ function App() {
             pantryDetails={pantryDetails}
           />
         )}
+        {currentPage === 'reports' && (
+          <ReportsPage 
+            macrosByRecipe={macrosByRecipe} 
+            onNavigate={setCurrentPage}
+          />
+        )}
         {currentPage === 'users' && (
           <UsersPage 
             users={users} 
@@ -329,7 +346,7 @@ function App() {
           <UserDetailsPage currentUser={currentUser} />
         )}
         {currentPage === 'calorie-goal' && (
-          <CaloricGoalPage />
+          <CaloricGoalPage currentUser={currentUser} />
         )}
       </main>
       <Chatbot />

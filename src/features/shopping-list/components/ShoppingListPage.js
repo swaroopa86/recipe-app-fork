@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import ShoppingItemCard from './ShoppingItemCard';
 import { fetchShoppingList, createShoppingListItem, updateShoppingListItem, deleteShoppingListItem } from '../../../shared/api';
 import './ShoppingListPage.css';
@@ -11,7 +11,6 @@ const ShoppingListPage = ({ shoppingList, setShoppingList, pantryDetails }) => {
   // Calculate total items and estimated cost (placeholder)
   const totalItems = shoppingList.length;
   const purchasedItems = shoppingList.filter(item => item.purchased).length;
-  const remainingItems = totalItems - purchasedItems;
 
   // Group items into only 2 categories: Manual Entry and Recipe items
   const manualItems = shoppingList.filter(item => 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { detectAllAllergens, getUserAllergenConflicts } from '../../../shared/utils/allergenUtils';
+import { getUserAllergenConflicts } from '../../../shared/utils/allergenUtils';
 import { convertUnits, areUnitsCompatible, formatQuantity } from '../../../utils/unitConversion';
 import { updatePantryItem, deletePantryItem } from '../../../shared/api';
 import RecipeModal from '../../recipes/components/RecipeModal';
@@ -199,10 +199,10 @@ const CookingForPage = ({
         message += `, but no pantry items were updated.`;
       }
       
-      if (conversionErrors.length > 0) {
-        message += ` Note: ${conversionErrors.length} ingredient${conversionErrors.length !== 1 ? 's' : ''} could not be converted.`;
-        console.warn('Unit conversion errors:', conversionErrors);
-      }
+             if (conversionErrors.length > 0) {
+         message += ` Note: ${conversionErrors.length} ingredient${conversionErrors.length !== 1 ? 's' : ''} could not be converted.`;
+         // Unit conversion errors occurred
+       }
       
       setSuccessMessage(message);
       setShowSuccessMessage(true);
@@ -212,14 +212,15 @@ const CookingForPage = ({
         setShowSuccessMessage(false);
       }, 5000);
       
-    } catch (error) {
-      console.error('Error updating pantry items:', error);
-      setSuccessMessage('Error updating pantry items. Please try again.');
-      setShowSuccessMessage(true);
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 3000);
-    }
+         } catch (error) {
+       // Error updating pantry items
+       setSuccessMessage('Error updating pantry items. Please try again.');
+       setShowSuccessMessage(true);
+       setTimeout(() => {
+         setShowSuccessMessage(false);
+       }, 3000);
+     }
+
   };
 
   // Function to handle adding ingredients to shopping list

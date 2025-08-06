@@ -77,6 +77,15 @@ const db = new sqlite3.Database(`${dbPath}/recipe_app.db`, (err) => {
         createdAt TEXT,
         FOREIGN KEY (pantryId) REFERENCES pantryDetails (pantryId)
       )`);
+      db.run(`CREATE TABLE IF NOT EXISTS cookingHistory (
+        id TEXT PRIMARY KEY,
+        recipeId TEXT,
+        recipeName TEXT,
+        cookedAt TEXT,
+        servings INTEGER DEFAULT 1,
+        userId TEXT,
+        FOREIGN KEY(recipeId) REFERENCES recipes(id)
+      )`);
       console.log('Tables created or already exist.');
     });
   }
@@ -484,6 +493,19 @@ app.get('/api/pantryDetails/:userId', async (req, res) => {
   }
 });
 
+app.post('/api/cookingHistory', async (req, res) => {
+  const { id, recipeId, recipeName, cookedAt, servings, userId } = req.body;
+  try {
+    await dbRun(
+      'INSERT INTO cookingHistory (id, recipeId, recipeName, cookedAt, servings, userId) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, recipeId, recipeName, cookedAt, servings || 1, userId]
+    );
+    res.status(201).json({ id, recipeId, recipeName, cookedAt, servings, userId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/generatePantryId', async (req, res) => {
   try {
     const pantryId = await generateUniquePantryId();
@@ -594,6 +616,40 @@ app.post('/api/invitations', async (req, res) => {
     });
   } catch (err) {
     console.error('Error processing invitations:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API Endpoint for Weekly Report
+app.get('/api/reports/weekly', async (req, res) => {
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Get cooking history from last 7 days
+    const cookedRecipes = await dbAll(
+      'SELECT * FROM cookingHistory WHERE cookedAt >= ? ORDER BY cookedAt DESC',
+      [weekAgo]
+    );
+    
+    // Get current pantry items
+    const pantryItems = await dbAll('SELECT * FROM pantryItems');
+    
+    // Get all recipes for reference
+    const recipes = await dbAll('SELECT * FROM recipes');
+    
+    res.json({
+      period: {
+        start: weekAgo,
+        end: new Date().toISOString()
+      },
+      cookedRecipes,
+      pantryItems,
+      recipes: recipes.map(recipe => ({
+        ...recipe,
+        ingredients: JSON.parse(recipe.ingredients)
+      }))
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

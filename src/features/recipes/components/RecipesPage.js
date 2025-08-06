@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { UNITS } from '../../../shared/constants/units';
 import { TIME_UNITS } from '../../../shared/constants/timeUnits';
 import { createRecipe, deleteRecipe } from '../../../shared/api';
@@ -135,7 +135,7 @@ function getCategoryTag(ingredientName) {
 }
 
 // --- Main Component ---
-const RecipesPage = ({ recipes, users, refreshRecipes, macrosByRecipe, pantryItems = [], pantryDetails }) => {
+const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], currentUser, refreshPantryItems, macrosByRecipe = {}, pantryDetails }) => {
   const [currentRecipe, setCurrentRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -324,7 +324,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes, macrosByRecipe, pantryIte
         await createRecipe(newRecipe);
         refreshRecipes(); // Refresh recipes after creation
       } catch (error) {
-        console.error('Error creating recipe:', error);
+        // Error creating recipe
         alert('Failed to create recipe. Please try again.');
       }
       setCurrentRecipe({
@@ -340,7 +340,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes, macrosByRecipe, pantryIte
       setIngredientSuggestions([]);
       setSuggestionIndex(null);
     }
-  }, [currentRecipe, refreshRecipes]);
+  }, [currentRecipe, refreshRecipes, pantryDetails?.pantryId]);
 
   const toggleForm = useCallback(() => {
     setShowForm(prev => !prev);
@@ -362,7 +362,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes, macrosByRecipe, pantryIte
       await deleteRecipe(id);
       refreshRecipes(); // Refresh recipes after deletion
     } catch (error) {
-      console.error('Error deleting recipe:', error);
+      // Error deleting recipe
       alert('Failed to delete recipe. Please try again.');
     }
   }, [refreshRecipes]);
@@ -664,6 +664,8 @@ const RecipesPage = ({ recipes, users, refreshRecipes, macrosByRecipe, pantryIte
         isOpen={showRecipeModal}
         onClose={closeRecipeModal}
         pantryItems={pantryItems}
+        currentUser={currentUser}
+        refreshPantryItems={refreshPantryItems}
       />
     </div>
   );

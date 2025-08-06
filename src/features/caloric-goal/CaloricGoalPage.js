@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useLocalStorage } from '../../shared/hooks/useLocalStorage';
 import './CaloricGoalPage.css';
 
-const CaloricGoalPage = () => {
-  const [unitSystem, setUnitSystem] = useState('metric');
-  const [goal, setGoal] = useState('maintain');
-  const [gender, setGender] = useState('male');
-  const [inputs, setInputs] = useState({ weight: '', height: '', age: '' });
-  const [caloricGoalResult, setCaloricGoalResult] = useState(null);
+const CaloricGoalPage = ({ currentUser }) => {
+  const [unitSystem, setUnitSystem] = useLocalStorage('calorieGoal_unitSystem', 'metric');
+  const [goal, setGoal] = useLocalStorage('calorieGoal_goal', 'maintain');
+  const [gender, setGender] = useLocalStorage('calorieGoal_gender', 'male');
+  const [inputs, setInputs] = useLocalStorage('calorieGoal_inputs', { weight: '', height: '', age: '' });
+  const [caloricGoalResult, setCaloricGoalResult] = useLocalStorage('calorieGoal_result', null);
 
   useEffect(() => {
     if (
@@ -41,7 +42,7 @@ const CaloricGoalPage = () => {
     } else {
       setCaloricGoalResult(null);
     }
-  }, [inputs, goal, unitSystem, gender]);
+  }, [inputs, goal, unitSystem, gender, setCaloricGoalResult]);
 
   return (
     <div className="caloric-goal-page-container">
@@ -157,6 +158,9 @@ const CaloricGoalPage = () => {
             </div>
             <div className="caloric-goal-note">
               <span>Estimates based on 25% protein, 50% carbs, 25% fat</span>
+            </div>
+            <div className="calorie-goal-saved">
+              <span>✅ Your daily calorie goal is saved and will be tracked in reports!</span>
             </div>
           </div>
         )}

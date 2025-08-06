@@ -299,7 +299,7 @@ function convertUnits(quantity, fromUnit, toUnit, ingredientName = '') {
     throw new Error(`Cannot convert from ${fromUnit} to ${toUnit}`);
     
   } catch (error) {
-    console.warn(`Unit conversion failed: ${error.message}`);
+    // Unit conversion failed
     return quantity; // Return original quantity if conversion fails
   }
 }
@@ -317,7 +317,7 @@ function compareQuantities(quantity1, unit1, quantity2, unit2, ingredientName = 
     if (quantity1 < convertedQuantity2) return -1;
     return 0;
   } catch (error) {
-    console.warn(`Quantity comparison failed: ${error.message}`);
+    // Quantity comparison failed
     return 0; // Assume equal if comparison fails
   }
 }

@@ -4,7 +4,7 @@ import './UserDetailsPage.css';
 
 const UserDetailsPage = ({ currentUser }) => {
   const [pantryDetails, setPantryDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const loadPantryDetails = async () => {

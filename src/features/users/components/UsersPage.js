@@ -61,7 +61,7 @@ const UsersPage = ({ users, refreshUsers, pantryDetails }) => {
         await createUser(newUser);
         refreshUsers(); // Refresh users after creation
       } catch (error) {
-        console.error('Error creating user:', error);
+        // Error creating user
         alert('Failed to create user. Please try again.');
       }
       setCurrentUser({
@@ -76,7 +76,7 @@ const UsersPage = ({ users, refreshUsers, pantryDetails }) => {
       await apiDeleteUser(id);
       refreshUsers(); // Refresh users after deletion
     } catch (error) {
-      console.error('Error deleting user:', error);
+      // Error deleting user
       alert('Failed to delete user. Please try again.');
     }
   }, [refreshUsers]);
