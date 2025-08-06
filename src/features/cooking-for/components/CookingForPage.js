@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { detectAllAllergens, getUserAllergenConflicts } from '../../../shared/utils/allergenUtils';
 import { convertUnits, areUnitsCompatible, formatQuantity } from '../../../utils/unitConversion';
+import { updatePantryItem, deletePantryItem } from '../../../shared/api';
 import RecipeModal from '../../recipes/components/RecipeModal';
 import './CookingForPage.css';
 
@@ -8,10 +9,11 @@ const CookingForPage = ({
   recipes,
   users,
   pantryItems,
-  setPantryItems,
+  refreshPantryItems,
   shoppingList,
   setShoppingList,
-  macrosByRecipe // <-- add this
+  macrosByRecipe,
+  pantryDetails
 }) => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -118,31 +120,28 @@ const CookingForPage = ({
   }, [safeRecipes, checkIngredientAvailability]);
 
   // Function to handle selecting a recipe and updating pantry quantities
-  const handleSelectRecipe = (recipe) => {
-    if (!recipe || !recipe.ingredients) return;
+  const handleSelectRecipe = async (recipe) => {
+    if (!recipe || !recipe.ingredients || !pantryDetails?.pantryId) return;
 
     let updatedItemsCount = 0;
     let conversionErrors = [];
 
-    setPantryItems(prevItems => {
-      const updatedItems = [...prevItems];
-      
-      recipe.ingredients.forEach(ingredient => {
+    try {
+      for (const ingredient of recipe.ingredients) {
         // Handle both old string format and new object format
         const ingredientName = typeof ingredient === 'string' ? ingredient : ingredient.name;
         const requiredQuantity = typeof ingredient === 'string' ? 0 : parseFloat(ingredient.quantity) || 0;
         const requiredUnit = typeof ingredient === 'string' ? '' : ingredient.unit;
 
-        if (requiredQuantity <= 0) return; // Skip ingredients without quantity
+        if (requiredQuantity <= 0) continue; // Skip ingredients without quantity
 
         // Find matching pantry item (case-insensitive partial match)
-        const pantryItemIndex = updatedItems.findIndex(item => 
+        const pantryItem = pantryItems.find(item => 
           item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
           ingredientName.toLowerCase().includes(item.name.toLowerCase())
         );
 
-        if (pantryItemIndex !== -1) {
-          const pantryItem = updatedItems[pantryItemIndex];
+        if (pantryItem) {
           const availableQuantity = parseFloat(pantryItem.quantity) || 0;
           
           try {
@@ -160,55 +159,67 @@ const CookingForPage = ({
                 );
               } else {
                 conversionErrors.push(`Cannot convert ${requiredUnit} to ${pantryItem.unit} for ${ingredientName}`);
-                return; // Skip this ingredient
+                continue; // Skip this ingredient
               }
             }
             
             // Check if we have enough quantity (with small tolerance for floating point)
             if (availableQuantity >= quantityToSubtract - 0.001) {
               const newQuantity = Math.max(0, availableQuantity - quantityToSubtract);
-              updatedItems[pantryItemIndex] = {
-                ...pantryItem,
-                quantity: formatQuantity(newQuantity)
-              };
+              
+              if (newQuantity < 0.001) {
+                // Remove item if quantity reaches 0 or very close to 0
+                await deletePantryItem(pantryItem.id);
+              } else {
+                // Update item with new quantity
+                await updatePantryItem({
+                  ...pantryItem,
+                  pantryId: pantryDetails.pantryId,
+                  quantity: formatQuantity(newQuantity)
+                });
+              }
               
               updatedItemsCount++;
-              
-              // Remove item if quantity reaches 0 or very close to 0
-              if (newQuantity < 0.001) {
-                updatedItems.splice(pantryItemIndex, 1);
-              }
             }
           } catch (error) {
             conversionErrors.push(`Error converting units for ${ingredientName}: ${error.message}`);
           }
         }
-      });
+      }
       
-      return updatedItems;
-    });
-    
-    // Show success message with detailed feedback
-    let message = `You have selected "${recipe.name}"`;
-    
-    if (updatedItemsCount > 0) {
-      message += ` and updated ${updatedItemsCount} pantry item${updatedItemsCount !== 1 ? 's' : ''} with unit conversion.`;
-    } else {
-      message += `, but no pantry items were updated.`;
+      // Refresh pantry items after all updates
+      await refreshPantryItems();
+      
+      // Show success message with detailed feedback
+      let message = `You have selected "${recipe.name}"`;
+      
+      if (updatedItemsCount > 0) {
+        message += ` and updated ${updatedItemsCount} pantry item${updatedItemsCount !== 1 ? 's' : ''} with unit conversion.`;
+      } else {
+        message += `, but no pantry items were updated.`;
+      }
+      
+      if (conversionErrors.length > 0) {
+        message += ` Note: ${conversionErrors.length} ingredient${conversionErrors.length !== 1 ? 's' : ''} could not be converted.`;
+        console.warn('Unit conversion errors:', conversionErrors);
+      }
+      
+      setSuccessMessage(message);
+      setShowSuccessMessage(true);
+      
+      // Auto-hide message after 5 seconds (longer for more detailed message)
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+      
+    } catch (error) {
+      console.error('Error updating pantry items:', error);
+      setSuccessMessage('Error updating pantry items. Please try again.');
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
     }
-    
-    if (conversionErrors.length > 0) {
-      message += ` Note: ${conversionErrors.length} ingredient${conversionErrors.length !== 1 ? 's' : ''} could not be converted.`;
-      console.warn('Unit conversion errors:', conversionErrors);
-    }
-    
-    setSuccessMessage(message);
-    setShowSuccessMessage(true);
-    
-    // Auto-hide message after 5 seconds (longer for more detailed message)
-    setTimeout(() => {
-      setShowSuccessMessage(false);
-    }, 5000);
   };
 
   // Function to handle adding ingredients to shopping list
