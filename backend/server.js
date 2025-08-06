@@ -488,8 +488,6 @@ app.get('/api/pantryDetails/:userId', async (req, res) => {
   try {
     const pantryDetails = await dbGet('SELECT * FROM pantryDetails WHERE userId = ?', [userId]);
     res.json(pantryDetails);
-    const history = await dbAll('SELECT * FROM cookingHistory ORDER BY cookedAt DESC');
-    res.json(history);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -504,7 +502,10 @@ app.post('/api/cookingHistory', async (req, res) => {
     );
     res.status(201).json({ id, recipeId, recipeName, cookedAt, servings, userId });
   } catch (err) {
-    
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/generatePantryId', async (req, res) => {
   try {
     const pantryId = await generateUniquePantryId();
@@ -649,6 +650,9 @@ app.get('/api/reports/weekly', async (req, res) => {
       }))
     });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post('/api/invitations/accept', async (req, res) => {
   const { invitationId, userId, userEmail, userName } = req.body;

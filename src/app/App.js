@@ -148,9 +148,11 @@ function App() {
             setPantryDetails(details);
             // Show invite others page after pantry setup
             setShowInviteOthers(true);
-                     } catch (error) {
-             // Error fetching pantry details after setup
-           } finally {
+          } catch (error) {
+            console.error('Error fetching pantry details after setup:', error);
+            // If fetching fails, still proceed to invite others page
+            setShowInviteOthers(true);
+          } finally {
             setIsLoadingPantryDetails(false);
           }
         }} 
