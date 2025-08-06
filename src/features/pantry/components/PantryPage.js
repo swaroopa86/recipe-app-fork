@@ -5,16 +5,20 @@ import PantryItemCard from './PantryItemCard';
 import { useOCR } from '../../../shared/hooks/useOCR';
 import { parseReceiptText } from '../../../shared/utils/receiptParser';
 import { createPantryItem, updatePantryItem, deletePantryItem, fetchPantryItems } from '../../../shared/api';
+import { logPriceHistory } from '../../../shared/api/priceHistory';
 import './PantryPage.css';
 
 const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // Item management state
   const [currentItem, setCurrentItem] = useState({
     name: '',
     quantity: '',
-    unit: 'cups'
+    unit: 'cups',
+    price: '' // Only for user input, not for pantryItems display
   });
   const [editingId, setEditingId] = useState(null);
+  const [multiplyPrice, setMultiplyPrice] = useState(true);
   
   // Modal states
   const [showAddForm, setShowAddForm] = useState(false);
@@ -53,27 +57,54 @@ const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
     setCurrentItem(prev => ({ ...prev, unit: e.target.value }));
   }, []);
 
+  const handlePriceChange = useCallback((e) => {
+    setCurrentItem(prev => ({ ...prev, price: e.target.value }));
+  }, []);
+
   const resetCurrentItem = useCallback(() => {
-    setCurrentItem({ name: '', quantity: '', unit: 'cups' });
+    setCurrentItem({ name: '', quantity: '', unit: 'cups', price: '' });
     setEditingId(null);
   }, []);
 
+
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     if (currentItem.name.trim() && currentItem.quantity.trim() && pantryDetails?.pantryId) {
       try {
+        // Determine the price to log
+        let priceToLog = currentItem.price !== '' ? parseFloat(currentItem.price) : null;
+        const quantity = parseFloat(currentItem.quantity) || 0;
+        if (multiplyPrice && priceToLog !== null) {
+          priceToLog = priceToLog * quantity;
+        }
         if (editingId) {
           // Update existing item
-          await updatePantryItem({ ...currentItem, id: editingId, pantryId: pantryDetails.pantryId });
+          await updatePantryItem({ ...currentItem, id: editingId, price: priceToLog, pantryId: pantryDetails.pantryId });
           setEditingId(null);
         } else {
-          // Add new item
-          const newItem = {
-            ...currentItem,
-            id: Date.now().toString(),
-            pantryId: pantryDetails.pantryId
-          };
-          await createPantryItem(newItem);
+          // Group by name (case-insensitive, trimmed)
+          const normalizedName = currentItem.name.trim().toLowerCase();
+          const existing = pantryItems.find(item => item.name.trim().toLowerCase() === normalizedName);
+          if (existing) {
+            // Sum quantity, update price to new value
+            const updatedQuantity = (parseFloat(existing.quantity) || 0) + (parseFloat(currentItem.quantity) || 0);
+            await updatePantryItem({
+              ...existing,
+              quantity: updatedQuantity.toString(),
+              price: priceToLog
+            });
+          } else {
+            // Add new item
+            const newItem = {
+              ...currentItem,
+              id: Date.now().toString(),
+              price: priceToLog,
+              pantryId: pantryDetails.pantryId
+            };
+            await createPantryItem(newItem);
+          }
         }
         refreshPantryItems(); // Refresh pantry items after creation/update
       } catch (error) {
@@ -84,13 +115,16 @@ const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
       resetCurrentItem();
       setShowAddForm(false);
     }
-  }, [currentItem, editingId, refreshPantryItems, resetCurrentItem, pantryDetails?.pantryId]);
+    setIsSubmitting(false);
+  }, [currentItem, editingId, refreshPantryItems, resetCurrentItem, pantryDetails?.pantryId, multiplyPrice, isSubmitting]);
+
 
   const editItem = useCallback((item) => {
     setCurrentItem({
       name: item.name,
       quantity: item.quantity,
-      unit: item.unit
+      unit: item.unit,
+      price: '' // No price from pantryItems, only for new input
     });
     setEditingId(item.id);
     setShowAddForm(true);
@@ -240,9 +274,33 @@ const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
   }, []);
 
   // Save items to pantry
+  // Utility: deduplicate array of items by name, unit, price, quantity
+  function deduplicateBatches(items) {
+    const unique = [];
+    const seen = new Set();
+    for (const item of items) {
+      const key = [
+        item.name.trim().toLowerCase(),
+        item.unit,
+        item.price !== undefined && item.price !== '' ? Number(item.price) : null,
+        item.quantity
+      ].join('|');
+      if (!seen.has(key)) {
+        unique.push(item);
+        seen.add(key);
+      }
+    }
+    return unique;
+  }
+
   const addSelectedItemsToPantry = useCallback(async () => {
-    const itemsToAdd = parsedItems.filter(item => selectedItems.has(item.id));
-    
+    // Filter selected, then deduplicate batches
+    const selected = parsedItems.filter(item => selectedItems.has(item.id));
+    // Only allow batches with a valid price
+    const itemsToAdd = deduplicateBatches(selected).filter(
+      item => item.price !== undefined && item.price !== '' && !isNaN(Number(item.price))
+    );
+
     if (itemsToAdd.length === 0 || !pantryDetails?.pantryId) {
       return;
     }
@@ -253,24 +311,30 @@ const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
         item => item.name.toLowerCase() === receiptItem.name.toLowerCase() &&
                 item.unit === receiptItem.unit
       );
+      const price = receiptItem.price !== undefined && receiptItem.price !== '' ? Number(receiptItem.price) : null;
       if (existingItem) {
         // Update existing item
+        const increment = parseFloat(receiptItem.quantity);
+        const updatedQuantity = (parseFloat(existingItem.quantity) || 0) + increment;
         const updatedItem = {
           ...existingItem,
-          quantity: (parseFloat(existingItem.quantity) + parseFloat(receiptItem.quantity)).toString(),
+          quantity: updatedQuantity.toString(),
           pantryId: pantryDetails.pantryId
         };
         await updatePantryItem(updatedItem);
+        // Only log the incremental batch, not the new total!
+        await logPriceHistory({ pantry_item_id: existingItem.id, price, quantity: increment });
         updatedCount++;
       } else {
         // Add new item
+        const newId = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
         const newItem = {
           ...receiptItem,
-          id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
-          pantryId: pantryDetails.pantryId,
-          price: receiptItem.price !== undefined && receiptItem.price !== '' ? Number(receiptItem.price) : null
+          id: newId,
+          pantryId: pantryDetails.pantryId
         };
         await createPantryItem(newItem);
+        await logPriceHistory({ pantry_item_id: newId, price, quantity: receiptItem.quantity });
         addedCount++;
       }
     }
@@ -347,6 +411,9 @@ const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
         onNameChange={handleNameChange}
         onQuantityChange={handleQuantityChange}
         onUnitChange={handleUnitChange}
+        onPriceChange={handlePriceChange}
+        multiplyPrice={multiplyPrice}
+        setMultiplyPrice={setMultiplyPrice}
       />
 
       {/* Receipt Scanner Modal */}

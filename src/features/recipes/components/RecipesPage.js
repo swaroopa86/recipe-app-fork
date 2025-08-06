@@ -35,7 +35,14 @@ async function getMacros(ingredients) {
   return total;
 }
 
+// In-memory cache for macros (ingredient name -> macros)
+const macrosCache = {};
+
 async function fetchMacrosFromOFF(ingredientName) {
+  const cacheKey = ingredientName.trim().toLowerCase();
+  if (macrosCache[cacheKey]) {
+    return macrosCache[cacheKey];
+  }
   const categoryTag = getCategoryTag(ingredientName);
   let searchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(ingredientName)}&search_simple=1&action=process&json=1&page_size=10`;
   if (categoryTag) {
@@ -81,7 +88,7 @@ async function fetchMacrosFromOFF(ingredientName) {
         }));
       return { suggestions };
     }
-
+    macrosCache[cacheKey] = macros;
     return macros;
   } else {
     return { suggestions: [] };
@@ -89,6 +96,9 @@ async function fetchMacrosFromOFF(ingredientName) {
 }
 
 async function fetchMacrosFromOFFByCode(code) {
+  if (macrosCache[code]) {
+    return macrosCache[code];
+  }
   const url = `https://world.openfoodfacts.org/api/v2/product/${code}.json`;
   const response = await fetch(url);
   const data = await response.json();
@@ -115,6 +125,7 @@ async function fetchMacrosFromOFFByCode(code) {
   ) {
     return null;
   }
+  macrosCache[code] = macros;
   return macros;
 }
 

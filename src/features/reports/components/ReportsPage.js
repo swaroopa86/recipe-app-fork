@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchWeeklyReport } from '../../../shared/api';
+import { fetchWeeklyPriceHistory } from '../../../shared/api/priceHistory';
 import { convertUnits, areUnitsCompatible } from '../../../utils/unitConversion';
 import './ReportsPage.css';
 
 const ReportsPage = ({ macrosByRecipe = {}, onNavigate }) => {
   const [reportData, setReportData] = useState(null);
+  const [priceHistory, setPriceHistory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -15,8 +17,12 @@ const ReportsPage = ({ macrosByRecipe = {}, onNavigate }) => {
     const loadReportData = async () => {
       try {
         setLoading(true);
-        const data = await fetchWeeklyReport();
+        const [data, priceData] = await Promise.all([
+          fetchWeeklyReport(),
+          fetchWeeklyPriceHistory()
+        ]);
         setReportData(data);
+        setPriceHistory(priceData);
       } catch (err) {
         setError('Failed to load report data');
         // Error loading report data
@@ -102,18 +108,35 @@ const ReportsPage = ({ macrosByRecipe = {}, onNavigate }) => {
     });
 
     // Check pantry impact
+    // DEBUG: Log priceHistory for inspection
+    console.log('DEBUG priceHistory:', priceHistory);
     const pantryImpact = Object.values(ingredientUsage).map(usage => {
       const pantryItem = pantryItems.find(item => 
         item.name.toLowerCase().includes(usage.name.toLowerCase()) ||
         usage.name.toLowerCase().includes(item.name.toLowerCase())
       );
-      
+      // Get latest price for this item from priceHistory or pantryItem
+      let price = null;
+      if (pantryItem && pantryItem.price && !isNaN(pantryItem.price)) {
+        price = parseFloat(pantryItem.price);
+      }
+      // Try to get latest price from priceHistory
+      if (!price && priceHistory && priceHistory.itemSpend) {
+        const priceHist = priceHistory.itemSpend.find(p => p.name && pantryItem && p.name.toLowerCase() === pantryItem.name.toLowerCase());
+        if (priceHist && priceHist.lastPrice) price = priceHist.lastPrice;
+      }
+      // Calculate cost of used and remaining
+      const usedCost = price ? usage.totalUsed * price : null;
+      const remainingCost = price && pantryItem ? parseFloat(pantryItem.quantity) * price : null;
       return {
         ...usage,
         availableInPantry: !!pantryItem,
         pantryQuantity: pantryItem ? parseFloat(pantryItem.quantity) : 0,
         pantryUnit: pantryItem ? pantryItem.unit : null,
-        impactLevel: pantryItem ? calculateImpactLevel(usage, pantryItem) : 'not-tracked'
+        impactLevel: pantryItem ? calculateImpactLevel(usage, pantryItem) : 'not-tracked',
+        price,
+        usedCost,
+        remainingCost
       };
     });
 
@@ -147,6 +170,27 @@ const ReportsPage = ({ macrosByRecipe = {}, onNavigate }) => {
       }
     };
   }, [reportData, macrosByRecipe, savedCalorieGoal]);
+
+  // DEBUG: Log pantryImpact for inspection (after calculation)
+  if (analysisData && analysisData.pantryImpact) {
+    console.log('DEBUG pantryImpact:', analysisData.pantryImpact);
+  }
+
+
+  // Compute weekly spend and average per recipe
+  const weeklySpend = useMemo(() => {
+    if (!priceHistory) return null;
+    return priceHistory.totalSpent || 0;
+  }, [priceHistory]);
+
+  const avgSpendPerRecipe = useMemo(() => {
+    if (!priceHistory || !reportData) return null;
+    const cooked = reportData.cookedRecipes;
+    if (!cooked.length) return 0;
+    // Try to map spend per recipe by linking pantry_item_id to ingredients in cooked recipes
+    // Fallback: just divide total spent by number of cooked meals
+    return (priceHistory.totalSpent || 0) / cooked.length;
+  }, [priceHistory, reportData]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -222,6 +266,14 @@ const ReportsPage = ({ macrosByRecipe = {}, onNavigate }) => {
         <div className="summary-card">
           <div className="summary-number">{Math.round(totalCaloriesConsumed)}</div>
           <div className="summary-label">Calories Consumed</div>
+        </div>
+        <div className="summary-card">
+          <div className="summary-number">${weeklySpend !== null ? weeklySpend.toFixed(2) : '...'}</div>
+          <div className="summary-label">Money Spent (week)</div>
+        </div>
+        <div className="summary-card">
+          <div className="summary-number">${avgSpendPerRecipe !== null ? avgSpendPerRecipe.toFixed(2) : '...'}</div>
+          <div className="summary-label">Avg. Spend per Meal</div>
         </div>
       </div>
 
@@ -386,8 +438,16 @@ const ReportsPage = ({ macrosByRecipe = {}, onNavigate }) => {
                   </span>
                 </div>
                 <div className="impact-details">
-                  <p>Used: {item.totalUsed.toFixed(1)} {item.unit}</p>
-                  <p>Available: {item.pantryQuantity} {item.pantryUnit}</p>
+                  <p>Used: {item.totalUsed.toFixed(1)} {item.unit}
+                    {item.usedCost != null && (
+                      <> &bull; Cost: ${item.usedCost.toFixed(2)}</>
+                    )}
+                  </p>
+                  <p>Available: {item.pantryQuantity} {item.pantryUnit}
+                    {item.remainingCost != null && (
+                      <> &bull; Value: ${item.remainingCost.toFixed(2)}</>
+                    )}
+                  </p>
                 </div>
               </div>
             ))}
