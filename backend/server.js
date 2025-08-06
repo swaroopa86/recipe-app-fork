@@ -26,30 +26,38 @@ const db = new sqlite3.Database(`${dbPath}/recipe_app.db`, (err) => {
     db.serialize(() => {
       db.run(`CREATE TABLE IF NOT EXISTS recipes (
         id TEXT PRIMARY KEY,
+        pantryId TEXT,
         name TEXT,
         ingredients TEXT,
         method TEXT,
-        cookingTime TEXT
+        cookingTime TEXT,
+        FOREIGN KEY (pantryId) REFERENCES pantryDetails (pantryId)
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
+        pantryId TEXT,
         name TEXT,
-        allergens TEXT
+        allergens TEXT,
+        FOREIGN KEY (pantryId) REFERENCES pantryDetails (pantryId)
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS pantryItems (
         id TEXT PRIMARY KEY,
+        pantryId TEXT,
         name TEXT,
         quantity TEXT,
         unit TEXT,
-        price REAL
+        price REAL,
+        FOREIGN KEY (pantryId) REFERENCES pantryDetails (pantryId)
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS shoppingList (
         id TEXT PRIMARY KEY,
+        pantryId TEXT,
         name TEXT,
         quantity TEXT,
         unit TEXT,
         purchased INTEGER DEFAULT 0,
-        recipeSource TEXT
+        recipeSource TEXT,
+        FOREIGN KEY (pantryId) REFERENCES pantryDetails (pantryId)
       )`);
       // Create pantryDetails table without UNIQUE constraint on pantryId
       db.run(`CREATE TABLE IF NOT EXISTS pantryDetails (
@@ -253,9 +261,10 @@ const generateUniquePantryId = async () => {
 };
 
 // API Endpoints for Recipes
-app.get('/api/recipes', async (req, res) => {
+app.get('/api/recipes/:pantryId', async (req, res) => {
+  const { pantryId } = req.params;
   try {
-    const recipes = await dbAll('SELECT * FROM recipes');
+    const recipes = await dbAll('SELECT * FROM recipes WHERE pantryId = ?', [pantryId]);
     res.json(recipes.map(r => {
       let cookingTime = null;
       if (r.cookingTime) {
@@ -277,13 +286,13 @@ app.get('/api/recipes', async (req, res) => {
 });
 
 app.post('/api/recipes', async (req, res) => {
-  const { id, name, ingredients, method, cookingTime } = req.body;
+  const { id, pantryId, name, ingredients, method, cookingTime } = req.body;
   try {
     await dbRun(
-      'INSERT INTO recipes (id, name, ingredients, method, cookingTime) VALUES (?, ?, ?, ?, ?)',
-      [id, name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime)]
+      'INSERT INTO recipes (id, pantryId, name, ingredients, method, cookingTime) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, pantryId, name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime)]
     );
-    res.status(201).json({ id, name, ingredients, method, cookingTime });
+    res.status(201).json({ id, pantryId, name, ingredients, method, cookingTime });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -291,13 +300,13 @@ app.post('/api/recipes', async (req, res) => {
 
 app.put('/api/recipes/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, ingredients, method, cookingTime } = req.body;
+  const { pantryId, name, ingredients, method, cookingTime } = req.body;
   try {
     await dbRun(
-      'UPDATE recipes SET name = ?, ingredients = ?, method = ?, cookingTime = ? WHERE id = ?',
-      [name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime), id]
+      'UPDATE recipes SET pantryId = ?, name = ?, ingredients = ?, method = ?, cookingTime = ? WHERE id = ?',
+      [pantryId, name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime), id]
     );
-    res.json({ id, name, ingredients, method, cookingTime });
+    res.json({ id, pantryId, name, ingredients, method, cookingTime });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -314,9 +323,10 @@ app.delete('/api/recipes/:id', async (req, res) => {
 });
 
 // API Endpoints for Users
-app.get('/api/users', async (req, res) => {
+app.get('/api/users/:pantryId', async (req, res) => {
+  const { pantryId } = req.params;
   try {
-    const users = await dbAll('SELECT * FROM users');
+    const users = await dbAll('SELECT * FROM users WHERE pantryId = ?', [pantryId]);
     res.json(users.map(u => ({
       ...u,
       allergens: JSON.parse(u.allergens)
@@ -327,13 +337,13 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { id, name, allergens } = req.body;
+  const { id, pantryId, name, allergens } = req.body;
   try {
     await dbRun(
-      'INSERT INTO users (id, name, allergens) VALUES (?, ?, ?)',
-      [id, name, JSON.stringify(allergens)]
+      'INSERT INTO users (id, pantryId, name, allergens) VALUES (?, ?, ?, ?)',
+      [id, pantryId, name, JSON.stringify(allergens)]
     );
-    res.status(201).json({ id, name, allergens });
+    res.status(201).json({ id, pantryId, name, allergens });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -341,13 +351,13 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, allergens } = req.body;
+  const { pantryId, name, allergens } = req.body;
   try {
     await dbRun(
-      'UPDATE users SET name = ?, allergens = ? WHERE id = ?',
-      [name, JSON.stringify(allergens), id]
+      'UPDATE users SET pantryId = ?, name = ?, allergens = ? WHERE id = ?',
+      [pantryId, name, JSON.stringify(allergens), id]
     );
-    res.json({ id, name, allergens });
+    res.json({ id, pantryId, name, allergens });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -364,9 +374,10 @@ app.delete('/api/users/:id', async (req, res) => {
 });
 
 // API Endpoints for Pantry Items
-app.get('/api/pantryItems', async (req, res) => {
+app.get('/api/pantryItems/:pantryId', async (req, res) => {
+  const { pantryId } = req.params;
   try {
-    const pantryItems = await dbAll('SELECT * FROM pantryItems');
+    const pantryItems = await dbAll('SELECT * FROM pantryItems WHERE pantryId = ?', [pantryId]);
     res.json(pantryItems);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -374,13 +385,13 @@ app.get('/api/pantryItems', async (req, res) => {
 });
 
 app.post('/api/pantryItems', async (req, res) => {
-  const { id, name, quantity, unit, price = null } = req.body;
+  const { id, pantryId, name, quantity, unit, price = null } = req.body;
   try {
     await dbRun(
-      'INSERT INTO pantryItems (id, name, quantity, unit, price) VALUES (?, ?, ?, ?, ?)',
-      [id, name, quantity, unit, price]
+      'INSERT INTO pantryItems (id, pantryId, name, quantity, unit, price) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, pantryId, name, quantity, unit, price]
     );
-    res.status(201).json({ id, name, quantity, unit, price });
+    res.status(201).json({ id, pantryId, name, quantity, unit, price });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -388,13 +399,13 @@ app.post('/api/pantryItems', async (req, res) => {
 
 app.put('/api/pantryItems/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, quantity, unit, price = null } = req.body;
+  const { pantryId, name, quantity, unit, price = null } = req.body;
   try {
     await dbRun(
-      'UPDATE pantryItems SET name = ?, quantity = ?, unit = ?, price = ? WHERE id = ?',
-      [name, quantity, unit, price, id]
+      'UPDATE pantryItems SET pantryId = ?, name = ?, quantity = ?, unit = ?, price = ? WHERE id = ?',
+      [pantryId, name, quantity, unit, price, id]
     );
-    res.json({ id, name, quantity, unit, price });
+    res.json({ id, pantryId, name, quantity, unit, price });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -411,9 +422,10 @@ app.delete('/api/pantryItems/:id', async (req, res) => {
 });
 
 // API Endpoints for Shopping List
-app.get('/api/shoppingList', async (req, res) => {
+app.get('/api/shoppingList/:pantryId', async (req, res) => {
+  const { pantryId } = req.params;
   try {
-    const items = await dbAll('SELECT * FROM shoppingList');
+    const items = await dbAll('SELECT * FROM shoppingList WHERE pantryId = ?', [pantryId]);
     // Convert purchased from 0/1 to boolean for frontend
     res.json(items.map(item => ({
       ...item,
@@ -425,13 +437,13 @@ app.get('/api/shoppingList', async (req, res) => {
 });
 
 app.post('/api/shoppingList', async (req, res) => {
-  const { id, name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
+  const { id, pantryId, name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
   try {
     await dbRun(
-      'INSERT INTO shoppingList (id, name, quantity, unit, purchased, recipeSource) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, name, quantity, unit, purchased ? 1 : 0, recipeSource]
+      'INSERT INTO shoppingList (id, pantryId, name, quantity, unit, purchased, recipeSource) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [id, pantryId, name, quantity, unit, purchased ? 1 : 0, recipeSource]
     );
-    res.status(201).json({ id, name, quantity, unit, purchased, recipeSource });
+    res.status(201).json({ id, pantryId, name, quantity, unit, purchased, recipeSource });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -439,13 +451,13 @@ app.post('/api/shoppingList', async (req, res) => {
 
 app.put('/api/shoppingList/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
+  const { pantryId, name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
   try {
     await dbRun(
-      'UPDATE shoppingList SET name = ?, quantity = ?, unit = ?, purchased = ?, recipeSource = ? WHERE id = ?',
-      [name, quantity, unit, purchased ? 1 : 0, recipeSource, id]
+      'UPDATE shoppingList SET pantryId = ?, name = ?, quantity = ?, unit = ?, purchased = ?, recipeSource = ? WHERE id = ?',
+      [pantryId, name, quantity, unit, purchased ? 1 : 0, recipeSource, id]
     );
-    res.json({ id, name, quantity, unit, purchased, recipeSource });
+    res.json({ id, pantryId, name, quantity, unit, purchased, recipeSource });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

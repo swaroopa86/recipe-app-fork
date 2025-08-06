@@ -4,7 +4,7 @@ import { ALLERGENS } from '../../../shared/constants/allergens';
 import { createUser } from '../../../shared/api';
 import './UsersPage.css';
 
-const UsersPage = ({ users, refreshUsers }) => {
+const UsersPage = ({ users, refreshUsers, pantryDetails }) => {
   const [currentUser, setCurrentUser] = useState({
     name: '',
     allergens: new Set()
@@ -50,11 +50,12 @@ const UsersPage = ({ users, refreshUsers }) => {
 
   const handleUserSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (currentUser.name.trim()) {
+    if (currentUser.name.trim() && pantryDetails?.pantryId) {
       const newUser = {
         ...currentUser,
         id: Date.now().toString(), // Ensure ID is a string for backend
-        allergens: [...currentUser.allergens] // Convert Set to Array for JSON serialization
+        allergens: [...currentUser.allergens], // Convert Set to Array for JSON serialization
+        pantryId: pantryDetails.pantryId
       };
       try {
         await createUser(newUser);
@@ -68,7 +69,7 @@ const UsersPage = ({ users, refreshUsers }) => {
         allergens: new Set()
       });
     }
-  }, [currentUser, refreshUsers]);
+  }, [currentUser, refreshUsers, pantryDetails?.pantryId]);
 
   const handleDeleteUser = useCallback(async (id) => {
     try {

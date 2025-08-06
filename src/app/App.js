@@ -67,27 +67,43 @@ function App() {
   };
 
   const refreshRecipes = useCallback(async () => {
-    const data = await fetchRecipes();
-    setRecipes(data);
-  }, []);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchRecipes(pantryDetails.pantryId);
+      setRecipes(data);
+    } else {
+      setRecipes([]);
+    }
+  }, [pantryDetails?.pantryId]);
 
   const refreshUsers = useCallback(async () => {
-    const data = await fetchUsers();
-    setUsers(data.map(user => ({
-      ...user,
-      allergens: new Set(user.allergens || [])
-    })));
-  }, []);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchUsers(pantryDetails.pantryId);
+      setUsers(data.map(user => ({
+        ...user,
+        allergens: new Set(user.allergens || [])
+      })));
+    } else {
+      setUsers([]);
+    }
+  }, [pantryDetails?.pantryId]);
 
   const refreshPantryItems = useCallback(async () => {
-    const data = await fetchPantryItems();
-    setPantryItems(data);
-  }, []);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchPantryItems(pantryDetails.pantryId);
+      setPantryItems(data);
+    } else {
+      setPantryItems([]);
+    }
+  }, [pantryDetails?.pantryId]);
 
   const refreshShoppingList = useCallback(async () => {
-    const data = await fetchShoppingList();
-    setShoppingList(data || []);
-  }, []);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchShoppingList(pantryDetails.pantryId);
+      setShoppingList(data || []);
+    } else {
+      setShoppingList([]);
+    }
+  }, [pantryDetails?.pantryId]);
 
   useEffect(() => {
     if (currentUser && !showPantrySetup && !showInviteOthers && !showInvitationResponse) {
@@ -273,6 +289,7 @@ function App() {
             refreshRecipes={refreshRecipes}
             pantryItems={pantryItems}
             macrosByRecipe={macrosByRecipe}
+            pantryDetails={pantryDetails}
           />
         )}
         {currentPage === 'cooking-for' && (
@@ -284,16 +301,29 @@ function App() {
             shoppingList={shoppingList}
             setShoppingList={setShoppingList}
             macrosByRecipe={macrosByRecipe}
+            pantryDetails={pantryDetails}
           />
         )}
         {currentPage === 'pantry' && (
-          <PantryPage pantryItems={pantryItems} refreshPantryItems={refreshPantryItems} />
+          <PantryPage 
+            pantryItems={pantryItems} 
+            refreshPantryItems={refreshPantryItems}
+            pantryDetails={pantryDetails}
+          />
         )}
         {currentPage === 'shopping-list' && (
-          <ShoppingListPage shoppingList={shoppingList} setShoppingList={setShoppingList} />
+          <ShoppingListPage 
+            shoppingList={shoppingList} 
+            setShoppingList={setShoppingList}
+            pantryDetails={pantryDetails}
+          />
         )}
         {currentPage === 'users' && (
-          <UsersPage users={users} refreshUsers={refreshUsers} />
+          <UsersPage 
+            users={users} 
+            refreshUsers={refreshUsers}
+            pantryDetails={pantryDetails}
+          />
         )}
         {currentPage === 'user-details' && (
           <UserDetailsPage currentUser={currentUser} />

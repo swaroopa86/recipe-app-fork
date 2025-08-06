@@ -27,25 +27,25 @@ const callApi = async (endpoint, method = 'GET', data = null) => {
 };
 
 // Recipes API
-export const fetchRecipes = async () => callApi('/recipes');
+export const fetchRecipes = async (pantryId) => callApi(`/recipes/${pantryId}`);
 export const createRecipe = async (recipe) => callApi('/recipes', 'POST', recipe);
 export const updateRecipe = async (recipe) => callApi(`/recipes/${recipe.id}`, 'PUT', recipe);
 export const deleteRecipe = async (id) => callApi(`/recipes/${id}`, 'DELETE');
 
 // Users API
-export const fetchUsers = async () => callApi('/users');
+export const fetchUsers = async (pantryId) => callApi(`/users/${pantryId}`);
 export const createUser = async (user) => callApi('/users', 'POST', user);
 export const updateUser = async (user) => callApi(`/users/${user.id}`, 'PUT', user);
 export const deleteUser = async (id) => callApi(`/users/${id}`, 'DELETE');
 
 // Pantry Items API
-export const fetchPantryItems = async () => callApi('/pantryItems');
+export const fetchPantryItems = async (pantryId) => callApi(`/pantryItems/${pantryId}`);
 export const createPantryItem = async (item) => callApi('/pantryItems', 'POST', item);
 export const updatePantryItem = async (item) => callApi(`/pantryItems/${item.id}`, 'PUT', item);
 export const deletePantryItem = async (id) => callApi(`/pantryItems/${id}`, 'DELETE');
 
 // Shopping List API
-export const fetchShoppingList = async () => callApi('/shoppingList');
+export const fetchShoppingList = async (pantryId) => callApi(`/shoppingList/${pantryId}`);
 export const createShoppingListItem = async (item) => callApi('/shoppingList', 'POST', item);
 export const updateShoppingListItem = async (item) => callApi(`/shoppingList/${item.id}`, 'PUT', item);
 export const deleteShoppingListItem = async (id) => callApi(`/shoppingList/${id}`, 'DELETE');
