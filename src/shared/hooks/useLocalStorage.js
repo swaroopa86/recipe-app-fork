@@ -6,17 +6,20 @@ export const useLocalStorage = (key, initialValue, serializer = JSON) => {
       const item = window.localStorage.getItem(key);
       return item ? serializer.parse(item) : initialValue;
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
+      // Error reading localStorage
       return initialValue;
     }
   });
 
   const setValue = (value) => {
     try {
-      setStoredValue(value);
-      window.localStorage.setItem(key, serializer.stringify(value));
+      setStoredValue(prev => {
+        const valueToStore = typeof value === 'function' ? value(prev) : value;
+        window.localStorage.setItem(key, serializer.stringify(valueToStore));
+        return valueToStore;
+      });
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
+      // Error setting localStorage
     }
   };
 

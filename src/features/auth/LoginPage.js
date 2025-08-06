@@ -19,12 +19,12 @@ function LoginPage({ onLogin }) {
       
       onLogin(user);
     } catch (error) {
-      console.error('Error decoding JWT:', error);
+      // Error decoding JWT
     }
   };
 
   const handleError = () => {
-    console.error('Google login failed');
+          // Google login failed
   };
 
   return (

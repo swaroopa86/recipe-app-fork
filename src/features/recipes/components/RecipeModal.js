@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './RecipeModal.css';
 import { convertUnits, areUnitsCompatible } from '../../../utils/unitConversion';
+import { recordRecipeCooked, updatePantryItem } from '../../../shared/api';
 
-const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
+const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [], currentUser, refreshPantryItems }) => {
+  const [servings, setServings] = useState(1);
   // Handle escape key press
   useEffect(() => {
     const handleEscape = (event) => {
@@ -30,6 +32,107 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
     }
   };
 
+  const handleMarkAsCooked = async () => {
+    try {
+      const cookingRecord = {
+        id: Date.now().toString(),
+        recipeId: recipe.id,
+        recipeName: recipe.name,
+        cookedAt: new Date().toISOString(),
+        servings: servings,
+        userId: currentUser?.email || currentUser?.id || 'anonymous'
+      };
+      
+      // Record the recipe as cooked
+      await recordRecipeCooked(cookingRecord);
+      
+      // Update pantry quantities by subtracting used ingredients
+      if (recipe.ingredients && pantryItems.length > 0) {
+        const pantryUpdates = [];
+        let updateErrors = [];
+        
+        for (const ingredient of recipe.ingredients) {
+          const ingredientName = typeof ingredient === 'string' ? ingredient : ingredient.name;
+          const requiredQuantity = typeof ingredient === 'object' ? parseFloat(ingredient.quantity) || 0 : 0;
+          const requiredUnit = typeof ingredient === 'object' ? ingredient.unit : '';
+          
+          if (requiredQuantity <= 0) continue; // Skip ingredients without quantity
+          
+          // Find matching pantry item (case-insensitive partial match)
+          const pantryItem = pantryItems.find(item => 
+            item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
+            ingredientName.toLowerCase().includes(item.name.toLowerCase())
+          );
+          
+          if (pantryItem) {
+            const availableQuantity = parseFloat(pantryItem.quantity) || 0;
+            const totalUsed = requiredQuantity * servings;
+            let newQuantity = availableQuantity;
+            
+            try {
+              // Try to convert units if they don't match
+              if (requiredUnit !== pantryItem.unit) {
+                if (areUnitsCompatible(requiredUnit, pantryItem.unit)) {
+                  const convertedUsed = convertUnits(totalUsed, requiredUnit, pantryItem.unit, ingredientName);
+                  newQuantity = Math.max(0, availableQuantity - convertedUsed);
+                } else {
+                  // Units not compatible, skip this ingredient
+                  updateErrors.push(`Cannot convert ${requiredUnit} to ${pantryItem.unit} for ${ingredientName}`);
+                  continue;
+                }
+              } else {
+                // Same units, direct subtraction
+                newQuantity = Math.max(0, availableQuantity - totalUsed);
+              }
+              
+              // Only update if quantity changed
+              if (newQuantity !== availableQuantity) {
+                pantryUpdates.push({
+                  ...pantryItem,
+                  quantity: newQuantity.toString()
+                });
+              }
+            } catch (error) {
+              updateErrors.push(`Failed to update ${ingredientName}: ${error.message}`);
+            }
+          }
+        }
+        
+        // Apply all pantry updates
+        for (const updatedItem of pantryUpdates) {
+          try {
+            await updatePantryItem(updatedItem);
+          } catch (error) {
+            updateErrors.push(`Failed to update ${updatedItem.name}: ${error.message}`);
+          }
+        }
+        
+        // Refresh pantry data if we have the refresh function
+        if (refreshPantryItems) {
+          await refreshPantryItems();
+        }
+        
+        // Show success message with update summary
+        let message = `Great! "${recipe.name}" has been marked as cooked with ${servings} serving(s).`;
+        if (pantryUpdates.length > 0) {
+          message += `\n\nPantry updated: ${pantryUpdates.length} ingredient(s) quantities reduced.`;
+        }
+        if (updateErrors.length > 0) {
+          message += `\n\nNote: ${updateErrors.length} ingredient(s) couldn't be updated automatically.`;
+        }
+        
+        alert(message);
+      } else {
+        alert(`Great! "${recipe.name}" has been marked as cooked with ${servings} serving(s).`);
+      }
+      
+      onClose();
+    } catch (error) {
+              // Error recording cooked recipe
+      alert('Failed to record the recipe as cooked. Please try again.');
+    }
+  };
+
   if (!isOpen || !recipe) {
     return null;
   }
@@ -52,7 +155,10 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
           <div className="recipe-section">
             <h3>Cooking Time</h3>
             <p className="cooking-time">
-              {recipe.cookingTime?.quantity} {recipe.cookingTime?.unit}
+              {recipe.cookingTime && recipe.cookingTime.quantity && recipe.cookingTime.unit
+                ? `${recipe.cookingTime.quantity} ${recipe.cookingTime.unit}`
+                : (typeof recipe.cookingTime === 'string' ? recipe.cookingTime : '')
+              }
             </p>
           </div>
 
@@ -67,7 +173,7 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
                     : ingredient.name || ingredient;
                   
                   const requiredQuantity = typeof ingredient === 'object' 
-                    ? ingredient.quantity || 1 
+                    ? parseFloat(ingredient.quantity) || 1 
                     : 1;
                   
                   const requiredUnit = typeof ingredient === 'object' 
@@ -87,7 +193,7 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
                   }
 
                   // Check if we have enough quantity
-                  let availableQuantity = pantryItem.quantity;
+                  let availableQuantity = parseFloat(pantryItem.quantity) || 0;
                   
                   // Try to convert units if they don't match
                   if (pantryItem.unit !== requiredUnit) {
@@ -165,6 +271,26 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [] }) => {
         </div>
 
         <div className="recipe-modal-footer">
+          <div className="cooking-actions">
+            <div className="servings-input">
+              <label htmlFor="servings">Servings made:</label>
+              <input
+                id="servings"
+                type="number"
+                min="1"
+                max="20"
+                value={servings}
+                onChange={(e) => setServings(parseInt(e.target.value) || 1)}
+                className="servings-input-field"
+              />
+            </div>
+            <button 
+              className="recipe-modal-btn primary mark-cooked-btn" 
+              onClick={handleMarkAsCooked}
+            >
+              🍳 Mark as Cooked
+            </button>
+          </div>
           <button className="recipe-modal-btn secondary" onClick={onClose}>
             Close
           </button>

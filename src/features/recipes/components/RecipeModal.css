@@ -225,9 +225,45 @@
   padding: 16px 24px;
   border-top: 1px solid #e5e7eb;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
   background-color: #f9fafb;
+  flex-wrap: wrap;
+}
+
+.cooking-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.servings-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.servings-input label {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.servings-input-field {
+  width: 60px;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.servings-input-field:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
 .recipe-modal-btn {
@@ -248,6 +284,25 @@
 .recipe-modal-btn.secondary:hover {
   background-color: #4b5563;
   transform: translateY(-1px);
+}
+
+.recipe-modal-btn.primary {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+}
+
+.recipe-modal-btn.primary:hover {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+}
+
+.mark-cooked-btn {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Responsive Design */

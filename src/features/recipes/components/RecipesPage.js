@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { UNITS } from '../../../shared/constants/units';
 import { TIME_UNITS } from '../../../shared/constants/timeUnits';
+import { createRecipe, deleteRecipe } from '../../../shared/api';
 import RecipeModal from './RecipeModal';
 import './RecipesPage.css';
 
@@ -34,7 +35,14 @@ async function getMacros(ingredients) {
   return total;
 }
 
+// In-memory cache for macros (ingredient name -> macros)
+const macrosCache = {};
+
 async function fetchMacrosFromOFF(ingredientName) {
+  const cacheKey = ingredientName.trim().toLowerCase();
+  if (macrosCache[cacheKey]) {
+    return macrosCache[cacheKey];
+  }
   const categoryTag = getCategoryTag(ingredientName);
   let searchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(ingredientName)}&search_simple=1&action=process&json=1&page_size=10`;
   if (categoryTag) {
@@ -80,7 +88,7 @@ async function fetchMacrosFromOFF(ingredientName) {
         }));
       return { suggestions };
     }
-
+    macrosCache[cacheKey] = macros;
     return macros;
   } else {
     return { suggestions: [] };
@@ -88,6 +96,9 @@ async function fetchMacrosFromOFF(ingredientName) {
 }
 
 async function fetchMacrosFromOFFByCode(code) {
+  if (macrosCache[code]) {
+    return macrosCache[code];
+  }
   const url = `https://world.openfoodfacts.org/api/v2/product/${code}.json`;
   const response = await fetch(url);
   const data = await response.json();
@@ -114,6 +125,7 @@ async function fetchMacrosFromOFFByCode(code) {
   ) {
     return null;
   }
+  macrosCache[code] = macros;
   return macros;
 }
 
@@ -134,7 +146,7 @@ function getCategoryTag(ingredientName) {
 }
 
 // --- Main Component ---
-const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
+const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], currentUser, refreshPantryItems, macrosByRecipe = {}, pantryDetails }) => {
   const [currentRecipe, setCurrentRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -316,9 +328,16 @@ const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
       const newRecipe = {
         ...currentRecipe,
         ingredients: filteredIngredients,
-        id: Date.now()
+        id: Date.now().toString(), // Ensure ID is a string for backend
+        pantryId: pantryDetails?.pantryId
       };
-      setRecipes(prev => [...prev, newRecipe]);
+      try {
+        await createRecipe(newRecipe);
+        refreshRecipes(); // Refresh recipes after creation
+      } catch (error) {
+        // Error creating recipe
+        alert('Failed to create recipe. Please try again.');
+      }
       setCurrentRecipe({
         name: '',
         ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -332,7 +351,7 @@ const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
       setIngredientSuggestions([]);
       setSuggestionIndex(null);
     }
-  }, [currentRecipe, setRecipes]);
+  }, [currentRecipe, refreshRecipes, pantryDetails?.pantryId]);
 
   const toggleForm = useCallback(() => {
     setShowForm(prev => !prev);
@@ -349,6 +368,16 @@ const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
     }
   }, [showForm]);
 
+  const handleDeleteRecipe = useCallback(async (id) => {
+    try {
+      await deleteRecipe(id);
+      refreshRecipes(); // Refresh recipes after deletion
+    } catch (error) {
+      // Error deleting recipe
+      alert('Failed to delete recipe. Please try again.');
+    }
+  }, [refreshRecipes]);
+
   const openRecipeModal = useCallback((recipe) => {
     setSelectedRecipe(recipe);
     setShowRecipeModal(true);
@@ -358,10 +387,6 @@ const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
     setShowRecipeModal(false);
     setSelectedRecipe(null);
   }, []);
-
-  const deleteRecipe = useCallback((id) => {
-    setRecipes(prev => prev.filter(recipe => recipe.id !== id));
-  }, [setRecipes]);
 
   return (
     <div className="recipes-page-container">
@@ -401,7 +426,7 @@ const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteRecipe(recipe.id);
+                        handleDeleteRecipe(recipe.id);
                       }}
                       className="delete-recipe"
                       title="Delete recipe"
@@ -649,6 +674,9 @@ const RecipesPage = ({ recipes, setRecipes, users, macrosByRecipe }) => {
         recipe={selectedRecipe}
         isOpen={showRecipeModal}
         onClose={closeRecipeModal}
+        pantryItems={pantryItems}
+        currentUser={currentUser}
+        refreshPantryItems={refreshPantryItems}
       />
     </div>
   );

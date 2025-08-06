@@ -251,4 +251,74 @@ describe('App Component', () => {
       expect(screen.getByTestId('chatbot')).toBeInTheDocument();
     });
   });
+
+  describe('Header Display', () => {
+    test('shows personalized welcome message with pantry name when pantry details are available', () => {
+      mockLocalStorage.getItem.mockImplementation((key) => {
+        if (key === 'currentUser') {
+          return JSON.stringify({ 
+            id: 'test-user-id',
+            name: 'John Doe', 
+            picture: 'john.jpg' 
+          });
+        }
+        return null;
+      });
+
+      // Mock pantry details
+      const mockPantryDetails = {
+        userId: 'test-user-id',
+        pantryName: 'My Kitchen',
+        pantryType: 'Household',
+        createdAt: '2024-01-01T00:00:00.000Z'
+      };
+
+      render(<App />);
+      
+      // Mock the fetchPantryDetails to return pantry details
+      const mockFetchPantryDetails = jest.fn().mockResolvedValue(mockPantryDetails);
+      jest.doMock('../shared/api', () => ({
+        ...jest.requireActual('../shared/api'),
+        fetchPantryDetails: mockFetchPantryDetails
+      }));
+
+      expect(screen.getByText('Smart pantry - My Kitchen')).toBeInTheDocument();
+      expect(screen.getByText('My Kitchen')).toHaveClass('pantry-name');
+    });
+
+    test('shows default title when no pantry details are available', () => {
+      mockLocalStorage.getItem.mockImplementation((key) => {
+        if (key === 'currentUser') {
+          return JSON.stringify({ 
+            id: 'test-user-id',
+            name: 'John Doe', 
+            picture: 'john.jpg' 
+          });
+        }
+        return null;
+      });
+
+      render(<App />);
+      
+      expect(screen.getByText('Smart Pantry')).toBeInTheDocument();
+    });
+
+    test('shows loading message while fetching pantry details', () => {
+      mockLocalStorage.getItem.mockImplementation((key) => {
+        if (key === 'currentUser') {
+          return JSON.stringify({ 
+            id: 'test-user-id',
+            name: 'John Doe', 
+            picture: 'john.jpg' 
+          });
+        }
+        return null;
+      });
+
+      render(<App />);
+      
+      // During the loading state, it should show the loading message
+      expect(screen.getByText('Loading your pantry...')).toBeInTheDocument();
+    });
+  });
 });

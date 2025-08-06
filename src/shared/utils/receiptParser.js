@@ -2,8 +2,13 @@ import { UNIT_MAPPING, SKIP_LINES } from '../constants/units';
 
 // Flexible patterns to handle various receipt formats and spacing
 const ITEM_PATTERNS = [
-  // UK format with flexible spacing: "AUBERGINE                     £0.95"
-  /^([A-Z][A-Z\s&]+?)\s+£(\d+\.\d+)$/,
+  // General: 'ITEM_NAME    £PRICE' or 'ITEM_NAME    $PRICE' or 'ITEM_NAME    PRICE'
+  /^([A-Z\s-]+?)\s+[$£]?(\d+\.\d{2})$/i,
+  // Walmart style: "BANANAS 3143 2.18 lbs @ $0.68/lb $1.48 F"
+  /^(.+?)\s+\d+\s+(\d+(?:\.\d+)?)\s*(\w+)?\s*@?\s*\$?\d+(?:\.\d+)?\/?\w*\s+\$(\d+\.\d+)/,
+  
+  // Target style: "2 Honeycrisp Apples $4.99"
+  /^(\d+(?:\.\d+)?)\s+(.+?)\s+\$(\d+\.\d+)/,
   
   // US format with flexible spacing: "MILK                $3.49"
   /^([A-Z][A-Z\s&]+?)\s+\$(\d+\.\d+)$/,
@@ -70,35 +75,77 @@ const normalizeUnit = (unit) => {
 };
 
 const parseItemFromMatch = (match, patternIndex) => {
-  let name, quantity = '1', unit = 'pieces';
+  let name, quantity = '1', unit = 'pieces', price = undefined;
   
   switch (patternIndex) {
-    case 0: // UK format: "AUBERGINE £0.95"
-    case 1: // US format: "MILK $3.49"
-    case 2: // Mixed case UK: "Brown Onions £0.99" 
-    case 3: // Mixed case US: "Whole Milk $3.49"
-    case 7: // Very flexible fallback
+    case 0: // General: ITEM_NAME    (currency)PRICE
+      name = match[1];
+      price = match[2];
+      quantity = '1';
+      unit = 'pieces';
+      break;
+    case 1: // Walmart style
       name = match[1];
       quantity = '1';
       unit = 'pieces';
       break;
       
-    case 4: // Quantity first: "2 APPLES £2.50"
+    case 2:
+    case 10: // Target/quantity first
       quantity = match[1];
       name = match[2];
       unit = 'pieces';
       break;
       
-    case 5: // With item codes: "012345 BREAD £1.48"
+    case 3:
+    case 4:
+    case 11: // Generic/item code
       name = match[1];
       quantity = '1';
       unit = 'pieces';
       break;
       
-    case 6: // Weight based: "BANANAS 2.18 lbs @ $0.68/lb $1.48"
+    case 5: // Weight-based
       name = match[1];
       quantity = match[2];
       unit = match[3].toLowerCase();
+      break;
+      
+    case 22: // Quantity x item
+      quantity = match[1];
+      name = match[2];
+      unit = 'pieces';
+      break;
+      
+    case 7: // Item with parentheses
+      name = match[1];
+      quantity = match[2];
+      unit = match[3] || 'pieces';
+      break;
+      
+    case 8: // Original patterns
+      if (/^\d/.test(match[1])) {
+        const parts = match[1].split(' ');
+        quantity = parts[0];
+        name = parts.slice(1).join(' ');
+        unit = match[3] || 'pieces';
+      } else {
+        name = match[1];
+        quantity = match[2];
+        unit = match[3] || 'pieces';
+      }
+      break;
+      
+    case 9: // 3x Bananas
+      quantity = match[1];
+      name = match[2];
+      unit = 'pieces';
+      break;
+      
+    case 12: // Milk (1L)
+      name = match[1];
+      quantity = match[2];
+      unit = match[3] || 'pieces';
       break;
       
     default:
@@ -110,7 +157,8 @@ const parseItemFromMatch = (match, patternIndex) => {
   return {
     name: cleanItemName(name),
     quantity: parseFloat(quantity).toString(),
-    unit: normalizeUnit(unit)
+    unit: normalizeUnit(unit),
+    ...(price !== undefined ? { price } : {})
   };
 };
 
@@ -153,11 +201,9 @@ export const parseReceiptText = (text) => {
             id: `receipt-${index}-${Date.now()}-${Math.random()}`,
             name: item.name.trim(),
             quantity: item.quantity,
-            unit: item.unit
-          };
-          
-          items.push(newItem);
-          console.log(`  🎯 Added item:`, newItem);
+            unit: item.unit,
+            ...(item.price !== undefined ? { price: item.price } : {})
+          });
           matched = true;
           break;
         } else {
@@ -188,8 +234,17 @@ export const parseReceiptText = (text) => {
     }
   });
   
-  const finalItems = Object.values(combinedItems);
-  
-  console.log('\n🎉 Final parsed items:', finalItems);
-  return finalItems;
+  // Combine duplicates: sum quantity for same name+unit, keep latest price
+  const combined = {};
+  for (const item of items) {
+    const key = `${item.name}||${item.unit}`;
+    if (!combined[key]) {
+      combined[key] = { ...item };
+    } else {
+      // sum quantities (as numbers)
+      combined[key].quantity = (parseFloat(combined[key].quantity) + parseFloat(item.quantity)).toString();
+
+    }
+  }
+  return Object.values(combined);
 }; 
