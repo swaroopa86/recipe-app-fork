@@ -3,15 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "description": "A modern recipe management application with pantry tracking and receipt scanning",
-  "keywords": ["react", "recipe", "pantry", "ocr", "food-management"],
+  "keywords": [
+    "react",
+    "recipe",
+    "pantry",
+    "ocr",
+    "food-management"
+  ],
   "dependencies": {
+    "@react-oauth/google": "^0.12.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.1",
+    "express": "^4.19.2",
+    "jwt-decode": "^4.0.0",
+    "nodemailer": "^7.0.5",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-scripts": "5.0.1",
+    "sqlite3": "^5.1.7",
     "tesseract.js": "^6.0.1",
     "web-vitals": "^2.1.4"
   },
@@ -22,10 +36,14 @@
     "test:coverage": "react-scripts test --coverage --watchAll=false",
     "eject": "react-scripts eject",
     "lint": "eslint src/**/*.{js,jsx}",
+    "start:frontend": "react-scripts start",
+    "start:backend": "node backend/server.js",
+    "dev": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "lint:fix": "eslint src/**/*.{js,jsx} --fix",
     "format": "prettier --write src/**/*.{js,jsx,css,md}",
     "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
-    "clean": "rm -rf build node_modules/.cache"
+    "clean": "rm -rf build node_modules/.cache",
+    "encrypt-env": "node scripts/encrypt-env.js"
   },
   "eslintConfig": {
     "extends": [
@@ -46,7 +64,8 @@
     ]
   },
   "devDependencies": {
-    "ajv": "^7.2.4"
+    "ajv": "^7.2.4",
+    "concurrently": "^8.2.2"
   },
   "jest": {
     "collectCoverageFrom": [

@@ -23,12 +23,10 @@ export const useOCR = () => {
     setOcrStatus('Preparing image for OCR...');
 
     try {
-      console.log('Starting OCR process for:', imageFile.name);
       
       // Create worker with enhanced options for receipt recognition
       const worker = await createWorker('eng', 1, {
         logger: m => {
-          console.log('OCR Progress:', m);
           setOcrStatus(m.status || 'Processing...');
           if (m.progress) {
             setOcrProgress(Math.round(m.progress * 100));
@@ -43,13 +41,9 @@ export const useOCR = () => {
         'preserve_interword_spaces': '1'
       });
 
-      console.log('OCR worker configured, starting recognition...');
       setOcrStatus('Reading text from image...');
       
       const { data: { text, confidence } } = await worker.recognize(imageFile);
-      
-      console.log('OCR completed. Confidence:', confidence);
-      console.log('Extracted text:', text);
       
       await worker.terminate();
 
@@ -58,7 +52,7 @@ export const useOCR = () => {
       }
 
       if (confidence < 30) {
-        console.warn('Low confidence OCR result:', confidence);
+        // Low confidence OCR result
         setOcrStatus('⚠️ Low confidence - text may not be accurate');
       } else {
         setOcrStatus('✅ Text extracted successfully');
@@ -67,7 +61,7 @@ export const useOCR = () => {
       return { text, confidence };
 
     } catch (error) {
-      console.error('OCR Error:', error);
+      // OCR Error occurred
       setOcrStatus('❌ OCR failed - please try again');
       
       let errorMessage = 'Failed to process the image. ';
@@ -91,12 +85,10 @@ export const useOCR = () => {
         }
       }, 5000);
     }
-  }, []);
+  }, [isProcessingOCR]);
 
   const handleImageUpload = useCallback(async (file, onTextExtracted) => {
     if (!file) return;
-
-    console.log('Image selected:', file.name, file.size, file.type);
 
     try {
       validateImage(file);

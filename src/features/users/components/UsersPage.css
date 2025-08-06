@@ -32,6 +32,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 }
 
 .form-group label {
@@ -63,12 +64,13 @@
 
 .select-all-btn,
 .clear-all-btn {
-  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-size: .9rem;
+  font-weight: 600;
+  padding: .75rem 1.5rem;
+  transition: all .2s ease;
 }
 
 .select-all-btn {
@@ -105,6 +107,7 @@
   border-radius: 6px;
   padding: 1rem;
   background: #fafbfc;
+  position: relative;
 }
 
 .user-allergen-checkbox {
@@ -114,6 +117,7 @@
   padding: 0.25rem;
   border-radius: 4px;
   transition: background-color 0.2s ease;
+  position: relative;
 }
 
 .user-allergen-checkbox:hover {
@@ -137,6 +141,7 @@
   flex-shrink: 0;
   transition: all 0.2s ease;
   border: 2px solid #ddd;
+  position: relative;
 }
 
 .user-allergen-checkbox:hover .checkmark {
@@ -153,20 +158,18 @@
   content: "";
   position: absolute;
   display: none;
+  left: 3px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  box-sizing: border-box;
 }
 
 .user-allergen-checkbox input:checked ~ .checkmark:after {
   display: block;
-}
-
-.user-allergen-checkbox .checkmark:after {
-  left: 5px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
 }
 
 .user-allergen-checkbox .allergen-name {
