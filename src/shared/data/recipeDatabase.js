@@ -317,6 +317,35 @@ const RECIPE_DATABASE = [
       { name: 'olive oil', quantity: '2', unit: 'tablespoons', alternatives: ['oil'] }
     ],
     method: 'Drain chickpeas, reserve liquid. Blend chickpeas, tahini, lemon juice, garlic, and olive oil. Add reserved liquid as needed for consistency.'
+  },
+  {
+    id: 'roasted-aubergine-001',
+    name: 'Simple Roasted Aubergine',
+    cookingTime: '35 minutes',
+    difficulty: 'Easy',
+    servings: 4,
+    category: 'Side Dish',
+    ingredients: [
+      { name: 'aubergine', quantity: '1', unit: 'large', alternatives: ['eggplant', 'aubergines'] },
+      { name: 'oil', quantity: '3', unit: 'tablespoons', alternatives: ['olive oil', 'vegetable oil'] },
+      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['sea salt', 'table salt'] },
+      { name: 'onion', quantity: '1', unit: 'medium', alternatives: ['brown onions', 'brown onion', 'yellow onion'] }
+    ],
+    method: 'Preheat oven to 425°F. Cut aubergine into cubes. Dice onion. Toss with oil and salt. Roast 30-35 minutes until tender and golden.'
+  },
+  {
+    id: 'mashed-potatoes-001',
+    name: 'Simple Mashed Potatoes',
+    cookingTime: '25 minutes',
+    difficulty: 'Easy',
+    servings: 6,
+    category: 'Side Dish',
+    ingredients: [
+      { name: 'potatoes', quantity: '2', unit: 'kg', alternatives: ['potato', 'russet potatoes', 'fresh potatoes'] },
+      { name: 'butter', quantity: '4', unit: 'tablespoons', alternatives: ['spread', 'margarine', 'salted butter'] },
+      { name: 'salt', quantity: '1', unit: 'teaspoon', alternatives: ['sea salt', 'table salt'] }
+    ],
+    method: 'Peel and cube potatoes. Boil in salted water 15-20 minutes until tender. Drain and mash with butter and salt until smooth.'
   }
 ];
 
@@ -359,7 +388,7 @@ export const findMatchingRecipes = (pantryItems) => {
           'milk': ['whole milk', 'skim milk', '2% milk', 'low fat milk', 'dairy milk'],
           'bread': ['white bread', 'wheat bread', 'whole grain bread', 'sandwich bread', 'loaf bread'],
           'cheese': ['cheddar cheese', 'american cheese', 'swiss cheese', 'mozzarella cheese', 'sliced cheese'],
-          'butter': ['salted butter', 'unsalted butter', 'sweet butter'],
+          'butter': ['salted butter', 'unsalted butter', 'sweet butter', 'spread', 'margarine'],
           'eggs': ['large eggs', 'medium eggs', 'free range eggs', 'organic eggs'],
           'flour': ['all purpose flour', 'wheat flour', 'white flour'],
           'sugar': ['white sugar', 'granulated sugar', 'cane sugar'],
@@ -368,7 +397,7 @@ export const findMatchingRecipes = (pantryItems) => {
           'apples': ['apple', 'red apples', 'green apples', 'fresh apples'],
           'oranges': ['orange', 'fresh oranges', 'navel oranges'],
           'potatoes': ['potato', 'russet potatoes', 'red potatoes', 'fresh potatoes'],
-          'onion': ['yellow onion', 'white onion', 'red onion', 'sweet onion', 'onions'],
+          'onion': ['yellow onion', 'white onion', 'red onion', 'sweet onion', 'onions', 'brown onions', 'brown onion'],
           'garlic': ['fresh garlic', 'garlic bulb'],
           'carrots': ['carrot', 'fresh carrots', 'baby carrots'],
           'tomatoes': ['tomato', 'fresh tomatoes', 'vine tomatoes'],
@@ -376,7 +405,9 @@ export const findMatchingRecipes = (pantryItems) => {
           'chicken': ['chicken breast', 'chicken thighs', 'fresh chicken', 'whole chicken'],
           'beef': ['ground beef', 'beef chuck', 'lean beef'],
           'pasta': ['spaghetti', 'penne pasta', 'macaroni', 'noodles'],
-          'rice': ['white rice', 'brown rice', 'long grain rice']
+          'rice': ['white rice', 'brown rice', 'long grain rice'],
+          'aubergine': ['eggplant', 'aubergines'],
+          'eggplant': ['aubergine', 'aubergines']
         };
         
         // Check if pantry item matches any grocery-style names for this ingredient

@@ -171,7 +171,9 @@ const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
   }, [clearImage]);
 
   // Get automatic recipe suggestions
+  console.log('🥫 Current pantry items:', pantryItems);
   const recipeSuggestions = findMatchingRecipes(pantryItems);
+  console.log('🎯 Recipe suggestions result:', recipeSuggestions);
 
   // Modal control functions
   const toggleAddForm = useCallback(() => {
