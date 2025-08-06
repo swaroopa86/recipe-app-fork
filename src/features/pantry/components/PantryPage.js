@@ -7,7 +7,7 @@ import { parseReceiptText } from '../../../shared/utils/receiptParser';
 import { createPantryItem, updatePantryItem, deletePantryItem, fetchPantryItems } from '../../../shared/api';
 import './PantryPage.css';
 
-const PantryPage = ({ pantryItems, refreshPantryItems }) => {
+const PantryPage = ({ pantryItems, refreshPantryItems, pantryDetails }) => {
   // Item management state
   const [currentItem, setCurrentItem] = useState({
     name: '',
@@ -55,17 +55,18 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (currentItem.name.trim() && currentItem.quantity.trim()) {
+    if (currentItem.name.trim() && currentItem.quantity.trim() && pantryDetails?.pantryId) {
       try {
         if (editingId) {
           // Update existing item
-          await updatePantryItem({ ...currentItem, id: editingId });
+          await updatePantryItem({ ...currentItem, id: editingId, pantryId: pantryDetails.pantryId });
           setEditingId(null);
         } else {
           // Add new item
           const newItem = {
             ...currentItem,
-            id: Date.now().toString()
+            id: Date.now().toString(),
+            pantryId: pantryDetails.pantryId
           };
           await createPantryItem(newItem);
         }
@@ -78,7 +79,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
       resetCurrentItem();
       setShowAddForm(false);
     }
-  }, [currentItem, editingId, refreshPantryItems]);
+  }, [currentItem, editingId, refreshPantryItems, pantryDetails?.pantryId]);
 
   const resetCurrentItem = useCallback(() => {
     setCurrentItem({ name: '', quantity: '', unit: 'cups' });
@@ -242,7 +243,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
   const addSelectedItemsToPantry = useCallback(async () => {
     const itemsToAdd = parsedItems.filter(item => selectedItems.has(item.id));
     
-    if (itemsToAdd.length === 0) {
+    if (itemsToAdd.length === 0 || !pantryDetails?.pantryId) {
       return;
     }
     let addedCount = 0;
@@ -256,7 +257,8 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
         // Update existing item
         const updatedItem = {
           ...existingItem,
-          quantity: (parseFloat(existingItem.quantity) + parseFloat(receiptItem.quantity)).toString()
+          quantity: (parseFloat(existingItem.quantity) + parseFloat(receiptItem.quantity)).toString(),
+          pantryId: pantryDetails.pantryId
         };
         await updatePantryItem(updatedItem);
         updatedCount++;
@@ -265,6 +267,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
         const newItem = {
           ...receiptItem,
           id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+          pantryId: pantryDetails.pantryId,
           price: receiptItem.price !== undefined && receiptItem.price !== '' ? Number(receiptItem.price) : null
         };
         await createPantryItem(newItem);
@@ -287,7 +290,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
     setParsedItems([]);
     setSelectedItems(new Set());
     handleClearImage();
-  }, [parsedItems, selectedItems, refreshPantryItems, updatePantryItem, createPantryItem]);
+  }, [parsedItems, selectedItems, refreshPantryItems, updatePantryItem, createPantryItem, pantryDetails?.pantryId]);
 
   return (
     <div className="pantry-page-container">
