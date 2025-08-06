@@ -53,6 +53,11 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
     setCurrentItem(prev => ({ ...prev, unit: e.target.value }));
   }, []);
 
+  const resetCurrentItem = useCallback(() => {
+    setCurrentItem({ name: '', quantity: '', unit: 'cups' });
+    setEditingId(null);
+  }, []);
+
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (currentItem.name.trim() && currentItem.quantity.trim()) {
@@ -71,19 +76,14 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
         }
         refreshPantryItems(); // Refresh pantry items after creation/update
       } catch (error) {
-        console.error('Error saving pantry item:', error);
+        // Error saving pantry item
         alert('Failed to save pantry item. Please try again.');
       }
       
       resetCurrentItem();
       setShowAddForm(false);
     }
-  }, [currentItem, editingId, refreshPantryItems]);
-
-  const resetCurrentItem = useCallback(() => {
-    setCurrentItem({ name: '', quantity: '', unit: 'cups' });
-    setEditingId(null);
-  }, []);
+  }, [currentItem, editingId, refreshPantryItems, resetCurrentItem]);
 
   const editItem = useCallback((item) => {
     setCurrentItem({
@@ -100,7 +100,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
       await deletePantryItem(id);
       refreshPantryItems(); // Refresh pantry items after deletion
     } catch (error) {
-      console.error('Error deleting pantry item:', error);
+      // Error deleting pantry item
       alert('Failed to delete pantry item. Please try again.');
     }
   }, [refreshPantryItems]);
@@ -116,7 +116,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
         }
         refreshPantryItems(); // Refresh after clearing
       } catch (error) {
-        console.error('Error clearing pantry:', error);
+        // Error clearing pantry
         alert('Failed to clear pantry. Please try again.');
       }
     }
@@ -148,7 +148,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
       setSelectedItems(new Set());
       handleClearImage();
     }
-  }, [parsedItems, selectedItems, pantryItems, refreshPantryItems, handleClearImage, updatePantryItem, createPantryItem]);
+  }, [showReceiptForm, handleClearImage]);
 
   // Receipt text handling
   const handleReceiptTextChange = useCallback((e) => {
@@ -187,7 +187,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
         updateStatus('', items.length);
       });
     } catch (error) {
-      console.error('Image upload failed:', error);
+              // Image upload failed
     }
   }, [handleImageUpload, updateStatus]);
 
@@ -287,7 +287,7 @@ const PantryPage = ({ pantryItems, refreshPantryItems }) => {
     setParsedItems([]);
     setSelectedItems(new Set());
     handleClearImage();
-  }, [parsedItems, selectedItems, refreshPantryItems, updatePantryItem, createPantryItem]);
+  }, [parsedItems, selectedItems, pantryItems, refreshPantryItems, handleClearImage]);
 
   return (
     <div className="pantry-page-container">

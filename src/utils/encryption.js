@@ -24,7 +24,7 @@ export const encrypt = (text) => {
     const encrypted = CryptoJS.AES.encrypt(text, key).toString();
     return encrypted;
   } catch (error) {
-    console.error('Encryption failed:', error);
+    // Encryption failed
     return text; // Return original text if encryption fails
   }
 };
@@ -41,7 +41,7 @@ export const decrypt = (encryptedText) => {
     const originalText = decrypted.toString(CryptoJS.enc.Utf8);
     return originalText;
   } catch (error) {
-    console.error('Decryption failed:', error);
+    // Decryption failed
     return encryptedText; // Return encrypted text if decryption fails
   }
 };
@@ -69,7 +69,7 @@ export const getDecryptedGoogleClientId = () => {
   const encryptedClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   
   if (!encryptedClientId) {
-    console.warn('REACT_APP_GOOGLE_CLIENT_ID is not set');
+    // REACT_APP_GOOGLE_CLIENT_ID is not set
     return '';
   }
   

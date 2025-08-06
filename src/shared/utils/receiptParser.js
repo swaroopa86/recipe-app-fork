@@ -3,7 +3,7 @@ import { UNIT_MAPPING, SKIP_LINES } from '../constants/units';
 // Enhanced patterns for real grocery receipts
 const ITEM_PATTERNS = [
   // General: 'ITEM_NAME    £PRICE' or 'ITEM_NAME    $PRICE' or 'ITEM_NAME    PRICE'
-  /^([A-Z\s\-]+?)\s+[$£]?(\d+\.\d{2})$/i,
+  /^([A-Z\s-]+?)\s+[$£]?(\d+\.\d{2})$/i,
   // Walmart style: "BANANAS 3143 2.18 lbs @ $0.68/lb $1.48 F"
   /^(.+?)\s+\d+\s+(\d+(?:\.\d+)?)\s*(\w+)?\s*@?\s*\$?\d+(?:\.\d+)?\/?\w*\s+\$(\d+\.\d+)/,
   
@@ -76,34 +76,34 @@ const parseItemFromMatch = (match, patternIndex) => {
       quantity = '1';
       unit = 'pieces';
       break;
-    case 0: // Walmart style
+    case 1: // Walmart style
       name = match[1];
       quantity = match[2] || '1';
       unit = match[3] || 'pieces';
       break;
       
-    case 1:
-    case 6: // Target/quantity first
+    case 2:
+    case 10: // Target/quantity first
       quantity = match[1];
       name = match[2];
       unit = 'pieces';
       break;
       
-    case 2:
     case 3:
+    case 4:
     case 11: // Generic/item code
       name = match[1];
       quantity = '1';
       unit = 'pieces';
       break;
       
-    case 4: // Weight-based
+    case 5: // Weight-based
       name = match[1];
       quantity = match[2];
       unit = match[3].toLowerCase();
       break;
       
-    case 5: // Quantity x item
+    case 22: // Quantity x item
       quantity = match[1];
       name = match[2];
       unit = 'pieces';
@@ -134,7 +134,7 @@ const parseItemFromMatch = (match, patternIndex) => {
       unit = 'pieces';
       break;
       
-    case 10: // Milk (1L)
+    case 12: // Milk (1L)
       name = match[1];
       quantity = match[2];
       unit = match[3] || 'pieces';

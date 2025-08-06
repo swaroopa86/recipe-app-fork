@@ -1,5 +1,3 @@
-import { CalorieGoalCalculatorPage } from '../features';
-
 export { RecipesPage } from './recipes';
 export { UsersPage, UserDetailsPage } from './users';
 export { PantryPage } from './pantry';

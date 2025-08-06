@@ -52,7 +52,7 @@ export const useOCR = () => {
       }
 
       if (confidence < 30) {
-        console.warn('Low confidence OCR result:', confidence);
+        // Low confidence OCR result
         setOcrStatus('⚠️ Low confidence - text may not be accurate');
       } else {
         setOcrStatus('✅ Text extracted successfully');
@@ -61,7 +61,7 @@ export const useOCR = () => {
       return { text, confidence };
 
     } catch (error) {
-      console.error('OCR Error:', error);
+      // OCR Error occurred
       setOcrStatus('❌ OCR failed - please try again');
       
       let errorMessage = 'Failed to process the image. ';
@@ -85,7 +85,7 @@ export const useOCR = () => {
         }
       }, 5000);
     }
-  }, []);
+  }, [isProcessingOCR]);
 
   const handleImageUpload = useCallback(async (file, onTextExtracted) => {
     if (!file) return;

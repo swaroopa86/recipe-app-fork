@@ -424,6 +424,198 @@
   }
 }
 
+/* Calorie Goal Section */
+.calorie-goal-overview {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.calorie-goal-main {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex: 1;
+  min-width: 400px;
+}
+
+.calorie-progress-circle {
+  flex-shrink: 0;
+}
+
+.progress-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.progress-inner {
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-percentage {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  line-height: 1;
+}
+
+.progress-label {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.calorie-goal-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.calorie-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #4299e1;
+}
+
+.calorie-stat.surplus {
+  border-left-color: #e53e3e;
+  background: #fed7d7;
+}
+
+.calorie-stat.deficit {
+  border-left-color: #38a169;
+  background: #c6f6d5;
+}
+
+.stat-label {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.stat-value {
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.calorie-goal-insights {
+  flex: 1;
+  min-width: 300px;
+}
+
+.insight-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.insight-card.success {
+  background: #c6f6d5;
+  border-left-color: #38a169;
+}
+
+.insight-card.warning {
+  background: #fefcbf;
+  border-left-color: #d69e2e;
+}
+
+.insight-card.alert {
+  background: #fed7d7;
+  border-left-color: #e53e3e;
+}
+
+.insight-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.insight-card p {
+  margin: 0;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.no-calorie-goal {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 2px dashed #cbd5e0;
+}
+
+.no-goal-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-calorie-goal h3 {
+  margin: 0 0 1rem 0;
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.no-calorie-goal p {
+  margin: 0 0 2rem 0;
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+.set-goal-btn {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+}
+
+.set-goal-btn:hover {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+}
+
+@media (max-width: 768px) {
+  .calorie-goal-overview {
+    flex-direction: column;
+  }
+
+  .calorie-goal-main {
+    flex-direction: column;
+    min-width: auto;
+    width: 100%;
+  }
+
+  .calorie-goal-insights {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .summary-cards {
     grid-template-columns: 1fr;

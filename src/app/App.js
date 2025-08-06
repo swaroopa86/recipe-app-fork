@@ -45,7 +45,7 @@ function App() {
   const refreshShoppingList = useCallback(async () => {
     const data = await fetchShoppingList();
     setShoppingList(data || []);
-  }, []);
+  }, [setShoppingList]);
 
   useEffect(() => {
     if (currentUser) {
@@ -170,6 +170,8 @@ function App() {
             users={users}
             refreshRecipes={refreshRecipes}
             pantryItems={pantryItems}
+            currentUser={currentUser}
+            refreshPantryItems={refreshPantryItems}
             macrosByRecipe={macrosByRecipe}
           />
         )}
@@ -191,7 +193,10 @@ function App() {
           <ShoppingListPage shoppingList={shoppingList} setShoppingList={setShoppingList} />
         )}
         {currentPage === 'reports' && (
-          <ReportsPage />
+          <ReportsPage 
+            macrosByRecipe={macrosByRecipe} 
+            onNavigate={setCurrentPage}
+          />
         )}
         {currentPage === 'users' && (
           <UsersPage users={users} refreshUsers={refreshUsers} />
@@ -203,7 +208,7 @@ function App() {
           <UserDetailsPage currentUser={currentUser} />
         )}
         {currentPage === 'calorie-goal' && (
-          <CaloricGoalPage />
+          <CaloricGoalPage currentUser={currentUser} />
         )}
       </main>
       <Chatbot />

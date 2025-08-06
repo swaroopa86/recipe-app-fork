@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { detectAllAllergens, getUserAllergenConflicts } from '../../../shared/utils/allergenUtils';
+import { getUserAllergenConflicts } from '../../../shared/utils/allergenUtils';
 import { convertUnits, areUnitsCompatible, formatQuantity } from '../../../utils/unitConversion';
 import RecipeModal from '../../recipes/components/RecipeModal';
 import './CookingForPage.css';
@@ -199,7 +199,7 @@ const CookingForPage = ({
     
     if (conversionErrors.length > 0) {
       message += ` Note: ${conversionErrors.length} ingredient${conversionErrors.length !== 1 ? 's' : ''} could not be converted.`;
-      console.warn('Unit conversion errors:', conversionErrors);
+              // Unit conversion errors occurred
     }
     
     setSuccessMessage(message);

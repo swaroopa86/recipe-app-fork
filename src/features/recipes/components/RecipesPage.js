@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { UNITS } from '../../../shared/constants/units';
 import { TIME_UNITS } from '../../../shared/constants/timeUnits';
 import { createRecipe, deleteRecipe } from '../../../shared/api';
@@ -135,7 +135,7 @@ function getCategoryTag(ingredientName) {
 }
 
 // --- Main Component ---
-const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], currentUser, refreshPantryItems }) => {
+const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], currentUser, refreshPantryItems, macrosByRecipe = {} }) => {
   const [currentRecipe, setCurrentRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -323,7 +323,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], current
         await createRecipe(newRecipe);
         refreshRecipes(); // Refresh recipes after creation
       } catch (error) {
-        console.error('Error creating recipe:', error);
+        // Error creating recipe
         alert('Failed to create recipe. Please try again.');
       }
       setCurrentRecipe({
@@ -361,7 +361,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], current
       await deleteRecipe(id);
       refreshRecipes(); // Refresh recipes after deletion
     } catch (error) {
-      console.error('Error deleting recipe:', error);
+      // Error deleting recipe
       alert('Failed to delete recipe. Please try again.');
     }
   }, [refreshRecipes]);

@@ -128,7 +128,7 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [], currentUser, r
       
       onClose();
     } catch (error) {
-      console.error('Error recording cooked recipe:', error);
+              // Error recording cooked recipe
       alert('Failed to record the recipe as cooked. Please try again.');
     }
   };

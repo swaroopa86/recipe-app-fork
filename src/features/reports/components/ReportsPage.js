@@ -3,10 +3,13 @@ import { fetchWeeklyReport } from '../../../shared/api';
 import { convertUnits, areUnitsCompatible } from '../../../utils/unitConversion';
 import './ReportsPage.css';
 
-const ReportsPage = () => {
+const ReportsPage = ({ macrosByRecipe = {}, onNavigate }) => {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Get saved calorie goal from localStorage
+  const savedCalorieGoal = JSON.parse(localStorage.getItem('calorieGoal_result') || 'null');
 
   useEffect(() => {
     const loadReportData = async () => {
@@ -16,7 +19,7 @@ const ReportsPage = () => {
         setReportData(data);
       } catch (err) {
         setError('Failed to load report data');
-        console.error('Error loading report:', err);
+        // Error loading report data
       } finally {
         setLoading(false);
       }
@@ -61,6 +64,18 @@ const ReportsPage = () => {
     // Calculate total servings
     const totalServings = cookedRecipes.reduce((sum, record) => sum + (record.servings || 1), 0);
 
+    // Calculate total calories consumed
+    const totalCaloriesConsumed = cookedRecipes.reduce((sum, record) => {
+      const recipe = recipes.find(r => r.id === record.recipeId);
+      if (recipe && macrosByRecipe[record.recipeId]) {
+        const macros = macrosByRecipe[record.recipeId];
+        const caloriesPerServing = macros.calories || 0;
+        const servings = record.servings || 1;
+        return sum + (caloriesPerServing * servings);
+      }
+      return sum;
+    }, 0);
+
     // Analyze ingredient usage
     const ingredientUsage = {};
     cookedRecipes.forEach(record => {
@@ -102,9 +117,24 @@ const ReportsPage = () => {
       };
     });
 
+    // Calculate calorie goal analysis
+    const daysInPeriod = 7;
+    const targetCaloriesPerWeek = savedCalorieGoal ? savedCalorieGoal * daysInPeriod : null;
+    const calorieGoalAnalysis = savedCalorieGoal ? {
+      dailyGoal: savedCalorieGoal,
+      weeklyGoal: targetCaloriesPerWeek,
+      actualWeekly: totalCaloriesConsumed,
+      dailyAverage: totalCaloriesConsumed / daysInPeriod,
+      goalAchievement: (totalCaloriesConsumed / targetCaloriesPerWeek) * 100,
+      surplus: totalCaloriesConsumed - targetCaloriesPerWeek,
+      dailySurplus: (totalCaloriesConsumed - targetCaloriesPerWeek) / daysInPeriod
+    } : null;
+
     return {
       recipeFrequency,
       totalServings,
+      totalCaloriesConsumed,
+      calorieGoalAnalysis,
       ingredientUsage: Object.values(ingredientUsage),
       pantryImpact,
       mostUsedIngredients: Object.values(ingredientUsage)
@@ -116,7 +146,7 @@ const ReportsPage = () => {
         avgServingsPerMeal: totalServings / Math.max(cookedRecipes.length, 1)
       }
     };
-  }, [reportData]);
+  }, [reportData, macrosByRecipe, savedCalorieGoal]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -159,6 +189,8 @@ const ReportsPage = () => {
   const { 
     recipeFrequency, 
     totalServings, 
+    totalCaloriesConsumed,
+    calorieGoalAnalysis,
     pantryImpact, 
     mostUsedIngredients, 
     weekSummary 
@@ -188,10 +220,95 @@ const ReportsPage = () => {
           <div className="summary-label">Total Servings</div>
         </div>
         <div className="summary-card">
-          <div className="summary-number">{weekSummary.avgServingsPerMeal.toFixed(1)}</div>
-          <div className="summary-label">Avg Servings/Meal</div>
+          <div className="summary-number">{Math.round(totalCaloriesConsumed)}</div>
+          <div className="summary-label">Calories Consumed</div>
         </div>
       </div>
+
+      {/* Calorie Goal Section */}
+      {calorieGoalAnalysis ? (
+        <div className="report-section">
+          <h2>🔥 Calorie Goal Analysis</h2>
+          <div className="calorie-goal-overview">
+            <div className="calorie-goal-main">
+              <div className="calorie-progress-circle">
+                <div className="progress-circle" style={{
+                  background: `conic-gradient(
+                    ${calorieGoalAnalysis.goalAchievement >= 100 ? '#e74c3c' : 
+                      calorieGoalAnalysis.goalAchievement >= 80 ? '#f39c12' : '#27ae60'} 
+                    ${Math.min(calorieGoalAnalysis.goalAchievement, 100) * 3.6}deg,
+                    #ecf0f1 0deg
+                  )`
+                }}>
+                  <div className="progress-inner">
+                    <div className="progress-percentage">
+                      {Math.round(calorieGoalAnalysis.goalAchievement)}%
+                    </div>
+                    <div className="progress-label">of goal</div>
+                  </div>
+                </div>
+              </div>
+              <div className="calorie-goal-stats">
+                <div className="calorie-stat">
+                  <span className="stat-label">Daily Goal:</span>
+                  <span className="stat-value">{calorieGoalAnalysis.dailyGoal} kcal</span>
+                </div>
+                <div className="calorie-stat">
+                  <span className="stat-label">Daily Average:</span>
+                  <span className="stat-value">{Math.round(calorieGoalAnalysis.dailyAverage)} kcal</span>
+                </div>
+                <div className="calorie-stat">
+                  <span className="stat-label">Weekly Total:</span>
+                  <span className="stat-value">{Math.round(calorieGoalAnalysis.actualWeekly)} kcal</span>
+                </div>
+                <div className={`calorie-stat ${calorieGoalAnalysis.surplus > 0 ? 'surplus' : 'deficit'}`}>
+                  <span className="stat-label">
+                    {calorieGoalAnalysis.surplus > 0 ? 'Surplus:' : 'Deficit:'}
+                  </span>
+                  <span className="stat-value">
+                    {calorieGoalAnalysis.surplus > 0 ? '+' : ''}{Math.round(calorieGoalAnalysis.surplus)} kcal
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="calorie-goal-insights">
+              {calorieGoalAnalysis.goalAchievement < 80 && (
+                <div className="insight-card warning">
+                  <h4>⚠️ Under Target</h4>
+                  <p>You're consuming {Math.round(100 - calorieGoalAnalysis.goalAchievement)}% less than your goal. Consider adding more nutritious meals.</p>
+                </div>
+              )}
+              {calorieGoalAnalysis.goalAchievement >= 80 && calorieGoalAnalysis.goalAchievement <= 110 && (
+                <div className="insight-card success">
+                  <h4>✅ On Track</h4>
+                  <p>Great job! You're meeting your calorie goals consistently this week.</p>
+                </div>
+              )}
+              {calorieGoalAnalysis.goalAchievement > 110 && (
+                <div className="insight-card alert">
+                  <h4>📈 Over Target</h4>
+                  <p>You're consuming {Math.round(calorieGoalAnalysis.goalAchievement - 100)}% more than your goal. Consider portion control or lighter recipes.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="report-section">
+          <h2>🔥 Calorie Goal Analysis</h2>
+          <div className="no-calorie-goal">
+            <div className="no-goal-icon">🎯</div>
+            <h3>Set Your Calorie Goal</h3>
+            <p>Track your calorie intake by setting up your daily calorie goal.</p>
+            <button 
+              className="set-goal-btn"
+              onClick={() => onNavigate && onNavigate('calorie-goal')}
+            >
+              Set Calorie Goal
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Cooked Recipes Timeline */}
       <div className="report-section">
@@ -292,6 +409,20 @@ const ReportsPage = () => {
                     <li key={index}>{item.name}</li>
                   ))}
               </ul>
+            </div>
+          )}
+
+          {calorieGoalAnalysis && calorieGoalAnalysis.goalAchievement < 80 && (
+            <div className="recommendation-card warning">
+              <h3>🍽️ Calorie Boost</h3>
+              <p>You're {Math.round(calorieGoalAnalysis.dailySurplus * -1)} calories short daily. Try adding healthy snacks or larger portions.</p>
+            </div>
+          )}
+
+          {calorieGoalAnalysis && calorieGoalAnalysis.goalAchievement > 120 && (
+            <div className="recommendation-card alert">
+              <h3>⚖️ Portion Control</h3>
+              <p>You're exceeding your goal by {Math.round(calorieGoalAnalysis.dailySurplus)} calories daily. Consider lighter recipes or smaller portions.</p>
             </div>
           )}
           
