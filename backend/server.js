@@ -1,8 +1,10 @@
+require('dotenv').config();
 const fs = require('fs');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = 3001;
@@ -49,12 +51,23 @@ const db = new sqlite3.Database(`${dbPath}/recipe_app.db`, (err) => {
         purchased INTEGER DEFAULT 0,
         recipeSource TEXT
       )`);
+      // Create pantryDetails table without UNIQUE constraint on pantryId
       db.run(`CREATE TABLE IF NOT EXISTS pantryDetails (
         userId TEXT PRIMARY KEY,
-        pantryId TEXT UNIQUE,
+        pantryId TEXT,
         pantryName TEXT,
         pantryType TEXT,
         createdAt TEXT
+      )`);
+      db.run(`CREATE TABLE IF NOT EXISTS invitations (
+        id TEXT PRIMARY KEY,
+        pantryId TEXT,
+        pantryName TEXT,
+        inviteeName TEXT,
+        inviteeEmail TEXT,
+        status TEXT DEFAULT 'pending',
+        createdAt TEXT,
+        FOREIGN KEY (pantryId) REFERENCES pantryDetails (pantryId)
       )`);
       console.log('Tables created or already exist.');
     });
@@ -96,6 +109,113 @@ const dbGet = (query, params = []) => {
       }
     });
   });
+};
+
+// Email configuration
+const createTransporter = () => {
+  // Check if email credentials are configured
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log('⚠️  Email credentials not configured. Using test mode - emails will be logged to console only.');
+    return null;
+  }
+  
+  // For development, use Gmail with app password
+  // In production, you would use a proper email service like SendGrid, AWS SES, etc.
+  return nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+};
+
+// Email sending function
+const sendInvitationEmail = async (inviteeName, inviteeEmail, pantryName, pantryId) => {
+  try {
+    const transporter = createTransporter();
+    
+    // If no email credentials configured, just log the email content
+    if (!transporter) {
+      const emailContent = `
+🥫 Smart Pantry Invitation
+
+Hello ${inviteeName}!
+
+You've been invited to join ${pantryName} on Smart Pantry - the intelligent way to manage your kitchen inventory and meal planning!
+
+What you can do with Smart Pantry:
+📝 Track pantry items and expiration dates
+🛒 Create and share shopping lists
+🍳 Discover recipes based on available ingredients
+👥 Collaborate with family or team members
+🔥 Set and track caloric goals
+📊 Monitor your nutrition and health goals
+
+Join ${pantryName}: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/join-pantry/${pantryId}
+
+This invitation was sent from Smart Pantry. If you didn't expect this invitation, you can safely ignore this email.
+      `;
+      
+      console.log(`📧 EMAIL WOULD BE SENT TO: ${inviteeEmail}`);
+      console.log(`📧 EMAIL CONTENT:`);
+      console.log(emailContent);
+      console.log(`📧 EMAIL END`);
+      
+      return { messageId: 'test-mode', status: 'logged' };
+    }
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: inviteeEmail,
+      subject: `You're invited to join ${pantryName} on Smart Pantry!`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">🥫 Smart Pantry Invitation</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-bottom: 20px;">Hello ${inviteeName}!</h2>
+            
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              You've been invited to join <strong>${pantryName}</strong> on Smart Pantry - the intelligent way to manage your kitchen inventory and meal planning!
+            </p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+              <h3 style="color: #333; margin-top: 0;">What you can do with Smart Pantry:</h3>
+              <ul style="color: #666; line-height: 1.8;">
+                <li>📝 Track pantry items and expiration dates</li>
+                <li>🛒 Create and share shopping lists</li>
+                <li>🍳 Discover recipes based on available ingredients</li>
+                <li>👥 Collaborate with family or team members</li>
+                <li>🔥 Set and track caloric goals</li>
+                <li>📊 Monitor your nutrition and health goals</li>
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/join-pantry/${pantryId}" 
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                🚀 Join ${pantryName}
+              </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; text-align: center; margin-top: 30px;">
+              This invitation was sent from Smart Pantry. If you didn't expect this invitation, you can safely ignore this email.
+            </p>
+          </div>
+        </div>
+      `
+    };
+    
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent successfully to ${inviteeEmail}:`, result.messageId);
+    return result;
+  } catch (error) {
+    console.error(`❌ Failed to send email to ${inviteeEmail}:`, error);
+    throw error;
+  }
 };
 
 // Function to generate unique pantry ID
@@ -384,6 +504,164 @@ app.put('/api/pantryDetails/:userId', async (req, res) => {
     );
     res.json({ userId, pantryId, pantryName, pantryType });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API Endpoints for Invitations
+app.get('/api/invitations/pending/:email', async (req, res) => {
+  const { email } = req.params;
+  try {
+    const pendingInvitation = await dbGet(
+      'SELECT * FROM invitations WHERE inviteeEmail = ? AND status = ?',
+      [email, 'pending']
+    );
+    
+    if (pendingInvitation) {
+      // Get pantry details for this invitation
+      const pantryDetails = await dbGet(
+        'SELECT * FROM pantryDetails WHERE pantryId = ?',
+        [pendingInvitation.pantryId]
+      );
+      
+      res.json({
+        invitation: pendingInvitation,
+        pantryDetails: pantryDetails
+      });
+    } else {
+      res.json(null);
+    }
+  } catch (err) {
+    console.error('Error fetching pending invitation:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/invitations', async (req, res) => {
+  const { pantryId, pantryName, invitations } = req.body;
+  try {
+    const invitationIds = [];
+    const emailResults = [];
+    
+    for (const invitation of invitations) {
+      const invitationId = crypto.randomBytes(8).toString('hex');
+      
+      // Save invitation to database
+      await dbRun(
+        'INSERT INTO invitations (id, pantryId, pantryName, inviteeName, inviteeEmail, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [invitationId, pantryId, pantryName, invitation.name, invitation.email, 'pending', new Date().toISOString()]
+      );
+      invitationIds.push(invitationId);
+      
+      // Send email invitation
+      try {
+        await sendInvitationEmail(invitation.name, invitation.email, pantryName, pantryId);
+        emailResults.push({ email: invitation.email, status: 'sent' });
+      } catch (emailError) {
+        console.error(`Failed to send email to ${invitation.email}:`, emailError);
+        emailResults.push({ email: invitation.email, status: 'failed', error: emailError.message });
+      }
+    }
+    
+    const successfulEmails = emailResults.filter(result => result.status === 'sent').length;
+    const failedEmails = emailResults.filter(result => result.status === 'failed');
+    
+    console.log(`Invitations processed for pantry ${pantryName}:`, {
+      total: invitations.length,
+      successful: successfulEmails,
+      failed: failedEmails.length,
+      results: emailResults
+    });
+    
+    res.status(201).json({ 
+      message: `Successfully sent ${successfulEmails} invitation(s)`,
+      invitationIds,
+      emailResults,
+      successfulEmails,
+      failedEmails: failedEmails.length
+    });
+  } catch (err) {
+    console.error('Error processing invitations:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/invitations/accept', async (req, res) => {
+  const { invitationId, userId, userEmail, userName } = req.body;
+  try {
+    // Get the invitation details
+    const invitation = await dbGet(
+      'SELECT * FROM invitations WHERE id = ? AND status = ?',
+      [invitationId, 'pending']
+    );
+    
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation not found or already processed' });
+    }
+    
+    // Get pantry details
+    const pantryDetails = await dbGet(
+      'SELECT * FROM pantryDetails WHERE pantryId = ?',
+      [invitation.pantryId]
+    );
+    
+    if (!pantryDetails) {
+      return res.status(404).json({ error: 'Pantry not found' });
+    }
+    
+    // Check if user already has pantry details
+    const existingUserPantry = await dbGet(
+      'SELECT * FROM pantryDetails WHERE userId = ?',
+      [userId]
+    );
+    
+    if (existingUserPantry) {
+      // Update existing user's pantry details to join the invited pantry
+      await dbRun(
+        'UPDATE pantryDetails SET pantryId = ?, pantryName = ?, pantryType = ? WHERE userId = ?',
+        [invitation.pantryId, pantryDetails.pantryName, pantryDetails.pantryType, userId]
+      );
+    } else {
+      // Add user to pantry details
+      await dbRun(
+        'INSERT INTO pantryDetails (userId, pantryId, pantryName, pantryType, createdAt) VALUES (?, ?, ?, ?, ?)',
+        [userId, invitation.pantryId, pantryDetails.pantryName, pantryDetails.pantryType, new Date().toISOString()]
+      );
+    }
+    
+    // Mark invitation as accepted
+    await dbRun(
+      'UPDATE invitations SET status = ? WHERE id = ?',
+      ['accepted', invitationId]
+    );
+    
+    res.json({
+      message: 'Invitation accepted successfully',
+      pantryDetails: {
+        userId,
+        pantryId: invitation.pantryId,
+        pantryName: pantryDetails.pantryName,
+        pantryType: pantryDetails.pantryType
+      }
+    });
+  } catch (err) {
+    console.error('Error accepting invitation:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/invitations/decline', async (req, res) => {
+  const { invitationId } = req.body;
+  try {
+    // Mark invitation as declined
+    await dbRun(
+      'UPDATE invitations SET status = ? WHERE id = ?',
+      ['declined', invitationId]
+    );
+    
+    res.json({ message: 'Invitation declined successfully' });
+  } catch (err) {
+    console.error('Error declining invitation:', err);
     res.status(500).json({ error: err.message });
   }
 });

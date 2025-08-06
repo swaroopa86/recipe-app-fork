@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
-import { fetchRecipes, fetchUsers, fetchPantryItems, fetchShoppingList, fetchPantryDetails } from '../shared/api';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, PantrySetupPage, Chatbot, CaloricGoalPage } from '../features';
+import { fetchRecipes, fetchUsers, fetchPantryItems, fetchShoppingList, fetchPantryDetails, getPendingInvitation } from '../shared/api';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, PantrySetupPage, InviteOthersPage, InvitationResponsePage, Chatbot, CaloricGoalPage } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 import { getMacros } from '../features/recipes/components/RecipesPage';
@@ -16,6 +16,9 @@ function App() {
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
   const [pantryDetails, setPantryDetails] = useState(null);
   const [showPantrySetup, setShowPantrySetup] = useState(false);
+  const [showInviteOthers, setShowInviteOthers] = useState(false);
+  const [showInvitationResponse, setShowInvitationResponse] = useState(false);
+  const [pendingInvitation, setPendingInvitation] = useState(null);
   const [isLoadingPantryDetails, setIsLoadingPantryDetails] = useState(false);
   const [macrosByRecipe, setMacrosByRecipe] = useState({});
 
@@ -28,9 +31,26 @@ function App() {
       const details = await fetchPantryDetails(user.id);
       setPantryDetails(details);
       setShowPantrySetup(false);
+      setShowInvitationResponse(false);
     } catch (error) {
-      // If no pantry details found, show setup page
-      setShowPantrySetup(true);
+      // If no pantry details found, check for pending invitations
+      try {
+        const invitationData = await getPendingInvitation(user.email);
+        if (invitationData) {
+          setPendingInvitation(invitationData);
+          setShowInvitationResponse(true);
+          setShowPantrySetup(false);
+        } else {
+          // No pending invitations, show setup page
+          setShowPantrySetup(true);
+          setShowInvitationResponse(false);
+        }
+      } catch (invitationError) {
+        console.error('Error checking for pending invitations:', invitationError);
+        // Fallback to setup page if invitation check fails
+        setShowPantrySetup(true);
+        setShowInvitationResponse(false);
+      }
     } finally {
       setIsLoadingPantryDetails(false);
     }
@@ -40,6 +60,9 @@ function App() {
     setCurrentUser(null);
     setPantryDetails(null);
     setShowPantrySetup(false);
+    setShowInviteOthers(false);
+    setShowInvitationResponse(false);
+    setPendingInvitation(null);
     setIsLoadingPantryDetails(false);
   };
 
@@ -67,13 +90,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (currentUser && !showPantrySetup) {
+    if (currentUser && !showPantrySetup && !showInviteOthers && !showInvitationResponse) {
       refreshRecipes();
       refreshUsers();
       refreshPantryItems();
       refreshShoppingList();
     }
-  }, [currentUser, showPantrySetup, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
+  }, [currentUser, showPantrySetup, showInviteOthers, showInvitationResponse, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
 
   useEffect(() => {
     async function fetchAllMacros() {
@@ -107,11 +130,46 @@ function App() {
             // Refresh pantry details after setup
             const details = await fetchPantryDetails(currentUser.id);
             setPantryDetails(details);
+            // Show invite others page after pantry setup
+            setShowInviteOthers(true);
           } catch (error) {
             console.error('Error fetching pantry details after setup:', error);
           } finally {
             setIsLoadingPantryDetails(false);
           }
+        }} 
+      />
+    );
+  }
+
+  // If user needs to respond to an invitation, show invitation response page
+  if (showInvitationResponse && pendingInvitation) {
+    return (
+      <InvitationResponsePage 
+        invitation={pendingInvitation.invitation}
+        pantryDetails={pendingInvitation.pantryDetails}
+        currentUser={currentUser}
+        onAccept={(acceptedPantryDetails) => {
+          setPantryDetails(acceptedPantryDetails);
+          setShowInvitationResponse(false);
+          setPendingInvitation(null);
+        }}
+        onDecline={() => {
+          setShowInvitationResponse(false);
+          setPendingInvitation(null);
+          setShowPantrySetup(true);
+        }}
+      />
+    );
+  }
+
+  // If user needs to invite others, show invite page
+  if (showInviteOthers) {
+    return (
+      <InviteOthersPage 
+        pantryDetails={pantryDetails}
+        onComplete={() => {
+          setShowInviteOthers(false);
         }} 
       />
     );

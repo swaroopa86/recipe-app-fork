@@ -55,3 +55,9 @@ export const fetchPantryDetails = async (userId) => callApi(`/pantryDetails/${us
 export const createPantryDetails = async (pantryDetails) => callApi('/pantryDetails', 'POST', pantryDetails);
 export const updatePantryDetails = async (pantryDetails) => callApi(`/pantryDetails/${pantryDetails.userId}`, 'PUT', pantryDetails);
 export const generatePantryId = async () => callApi('/generatePantryId');
+
+// Invitations API
+export const sendInvitation = async (invitationData) => callApi('/invitations', 'POST', invitationData);
+export const getPendingInvitation = async (email) => callApi(`/invitations/pending/${email}`);
+export const acceptInvitation = async (invitationData) => callApi('/invitations/accept', 'POST', invitationData);
+export const declineInvitation = async (invitationData) => callApi('/invitations/decline', 'POST', invitationData);
