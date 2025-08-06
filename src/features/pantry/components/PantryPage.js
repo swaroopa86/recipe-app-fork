@@ -4,6 +4,7 @@ import ReceiptScannerModal from './ReceiptScannerModal';
 import PantryItemCard from './PantryItemCard';
 import { useOCR } from '../../../shared/hooks/useOCR';
 import { parseReceiptText } from '../../../shared/utils/receiptParser';
+import { findMatchingRecipes } from '../../../shared/data/recipeDatabase';
 import './PantryPage.css';
 
 const PantryPage = ({ pantryItems, setPantryItems }) => {
@@ -27,6 +28,9 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
   // Success message state
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Recipe suggestions state
+  const [showRecipeSuggestions, setShowRecipeSuggestions] = useState(false);
 
   // OCR hook
   const { 
@@ -101,6 +105,9 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
       setPantryItems([]);
     }
   }, [setPantryItems]);
+
+  // Get automatic recipe suggestions
+  const recipeSuggestions = findMatchingRecipes(pantryItems);
 
   // Modal control functions
   const toggleAddForm = useCallback(() => {
@@ -304,11 +311,20 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
               <span className="scan-icon">📄</span>
               Scan Receipt
             </button>
-            {pantryItems.length > 0 && (
-              <button onClick={clearPantry} className="clear-pantry-btn">
-                Clear All
-              </button>
-            )}
+                          {pantryItems.length > 0 && (
+                <>
+                  <button 
+                    onClick={() => setShowRecipeSuggestions(!showRecipeSuggestions)} 
+                    className="find-recipes-btn"
+                  >
+                    <span className="recipe-icon">🍳</span>
+                    Recipe Ideas ({recipeSuggestions.canMakeNow.length + recipeSuggestions.almostReady.length})
+                  </button>
+                  <button onClick={clearPantry} className="clear-pantry-btn">
+                    Clear All
+                  </button>
+                </>
+              )}
           </div>
         </div>
 
@@ -319,18 +335,90 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
             <p>Add ingredients manually or scan a receipt to get started.</p>
           </div>
         ) : (
-          <div className="pantry-grid">
-            {pantryItems
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((item) => (
-                <PantryItemCard
-                  key={item.id}
-                  item={item}
-                  onEdit={editItem}
-                  onDelete={deleteItem}
-                />
-              ))}
-          </div>
+          <>
+            <div className="pantry-grid">
+              {pantryItems
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((item) => (
+                  <PantryItemCard
+                    key={item.id}
+                    item={item}
+                    onEdit={editItem}
+                    onDelete={deleteItem}
+                  />
+                ))}
+            </div>
+
+            {/* Automatic Recipe Suggestions Section */}
+            {showRecipeSuggestions && (
+              <div className="recipe-suggestions-section">
+                <div className="suggestions-header">
+                  <h3>🍳 Recipe Ideas Based on Your Pantry</h3>
+                  <button 
+                    onClick={() => setShowRecipeSuggestions(false)}
+                    className="close-suggestions-btn"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {recipeSuggestions.canMakeNow.length === 0 && recipeSuggestions.almostReady.length === 0 ? (
+                  <div className="no-recipe-matches">
+                    <span className="no-match-icon">🤷‍♂️</span>
+                    <h4>No Recipe Matches Found</h4>
+                    <p>Try adding more common ingredients like flour, eggs, milk, butter, or vegetables to see recipe suggestions!</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Ready to Cook Recipes */}
+                    {recipeSuggestions.canMakeNow.length > 0 && (
+                      <div className="suggestion-category">
+                        <div className="category-header ready-to-cook">
+                          <h4>✅ Ready to Cook ({recipeSuggestions.canMakeNow.length})</h4>
+                          <p>You have all the ingredients needed!</p>
+                        </div>
+                        <div className="recipe-suggestions-grid">
+                          {recipeSuggestions.canMakeNow.map(recipe => (
+                            <AutoRecipeCard key={recipe.id} recipe={recipe} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Almost Ready Recipes */}
+                    {recipeSuggestions.almostReady.length > 0 && (
+                      <div className="suggestion-category">
+                        <div className="category-header almost-ready">
+                          <h4>🛒 Almost Ready ({recipeSuggestions.almostReady.length})</h4>
+                          <p>Just need a few more ingredients</p>
+                        </div>
+                        <div className="recipe-suggestions-grid">
+                          {recipeSuggestions.almostReady.map(recipe => (
+                            <AutoRecipeCard key={recipe.id} recipe={recipe} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* More Ideas */}
+                    {recipeSuggestions.needMoreIngredients.length > 0 && (
+                      <div className="suggestion-category">
+                        <div className="category-header more-ideas">
+                          <h4>💡 More Ideas ({recipeSuggestions.needMoreIngredients.length})</h4>
+                          <p>Add a few ingredients to unlock these recipes</p>
+                        </div>
+                        <div className="recipe-suggestions-grid">
+                          {recipeSuggestions.needMoreIngredients.map(recipe => (
+                            <AutoRecipeCard key={recipe.id} recipe={recipe} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -369,6 +457,79 @@ const PantryPage = ({ pantryItems, setPantryItems }) => {
         onItemQuantityChange={handleItemQuantityChange}
         onItemUnitChange={handleItemUnitChange}
       />
+    </div>
+  );
+};
+
+// Automatic Recipe Suggestion Card Component
+const AutoRecipeCard = ({ recipe }) => {
+  const { matchPercentage, ingredientMatches, availableCount, totalCount } = recipe;
+
+  return (
+    <div className="recipe-suggestion-card">
+      <div className="recipe-suggestion-header">
+        <h5>{recipe.name}</h5>
+        <div className="match-percentage">
+          {Math.round(matchPercentage)}% match
+        </div>
+      </div>
+      
+      <div className="recipe-meta">
+        {recipe.cookingTime && (
+          <p className="cooking-time">⏱️ {recipe.cookingTime}</p>
+        )}
+        <p className="recipe-category">📂 {recipe.category}</p>
+        <p className="recipe-servings">🍽️ Serves {recipe.servings}</p>
+      </div>
+
+      <div className="ingredient-status">
+        <p className="status-text">
+          <span className="available-count">{availableCount}</span> of{' '}
+          <span className="total-count">{totalCount}</span> ingredients available
+        </p>
+        
+        <div className="progress-bar">
+          <div 
+            className="progress-fill" 
+            style={{ width: `${matchPercentage}%` }}
+          ></div>
+        </div>
+      </div>
+
+      <div className="ingredient-list">
+        <h6>Ingredients:</h6>
+        <ul>
+          {ingredientMatches.map((match, index) => {
+            const ingredient = match.ingredient;
+            
+            return (
+              <li 
+                key={index} 
+                className={`ingredient-status-item ${match.hasInPantry ? 'available' : 'missing'}`}
+              >
+                <span className="status-indicator">
+                  {match.hasInPantry ? '✅' : '❌'}
+                </span>
+                <span className="ingredient-details">
+                  <span className="ingredient-quantity">{ingredient.quantity} {ingredient.unit}</span>
+                  <span className="ingredient-name">{ingredient.name}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="recipe-method-preview">
+        <h6>Instructions:</h6>
+        <p>{recipe.method}</p>
+      </div>
+
+      <div className="recipe-difficulty">
+        <span className="difficulty-badge">
+          {recipe.difficulty === 'Easy' ? '😊' : recipe.difficulty === 'Medium' ? '🤔' : '😅'} {recipe.difficulty}
+        </span>
+      </div>
     </div>
   );
 };
