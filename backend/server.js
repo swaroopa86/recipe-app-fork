@@ -36,13 +36,16 @@ const db = new sqlite3.Database('/app/db/recipe_app.db', (err) => {
         id TEXT PRIMARY KEY,
         name TEXT,
         quantity TEXT,
-        unit TEXT
+        unit TEXT,
+        price REAL
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS shoppingList (
         id TEXT PRIMARY KEY,
         name TEXT,
         quantity TEXT,
-        unit TEXT
+        unit TEXT,
+        purchased INTEGER DEFAULT 0,
+        recipeSource TEXT
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS cookingHistory (
         id TEXT PRIMARY KEY,
@@ -99,10 +102,21 @@ const dbGet = (query, params = []) => {
 app.get('/api/recipes', async (req, res) => {
   try {
     const recipes = await dbAll('SELECT * FROM recipes');
-    res.json(recipes.map(r => ({
-      ...r,
-      ingredients: JSON.parse(r.ingredients)
-    })));
+    res.json(recipes.map(r => {
+      let cookingTime = null;
+      if (r.cookingTime) {
+        try {
+          cookingTime = JSON.parse(r.cookingTime);
+        } catch (e) {
+          cookingTime = null;
+        }
+      }
+      return {
+        ...r,
+        ingredients: JSON.parse(r.ingredients),
+        cookingTime
+      };
+    }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -113,7 +127,7 @@ app.post('/api/recipes', async (req, res) => {
   try {
     await dbRun(
       'INSERT INTO recipes (id, name, ingredients, method, cookingTime) VALUES (?, ?, ?, ?, ?)',
-      [id, name, JSON.stringify(ingredients), method, cookingTime]
+      [id, name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime)]
     );
     res.status(201).json({ id, name, ingredients, method, cookingTime });
   } catch (err) {
@@ -127,7 +141,7 @@ app.put('/api/recipes/:id', async (req, res) => {
   try {
     await dbRun(
       'UPDATE recipes SET name = ?, ingredients = ?, method = ?, cookingTime = ? WHERE id = ?',
-      [name, JSON.stringify(ingredients), method, cookingTime, id]
+      [name, JSON.stringify(ingredients), method, JSON.stringify(cookingTime), id]
     );
     res.json({ id, name, ingredients, method, cookingTime });
   } catch (err) {
@@ -206,13 +220,13 @@ app.get('/api/pantryItems', async (req, res) => {
 });
 
 app.post('/api/pantryItems', async (req, res) => {
-  const { id, name, quantity, unit } = req.body;
+  const { id, name, quantity, unit, price = null } = req.body;
   try {
     await dbRun(
-      'INSERT INTO pantryItems (id, name, quantity, unit) VALUES (?, ?, ?, ?)',
-      [id, name, quantity, unit]
+      'INSERT INTO pantryItems (id, name, quantity, unit, price) VALUES (?, ?, ?, ?, ?)',
+      [id, name, quantity, unit, price]
     );
-    res.status(201).json({ id, name, quantity, unit });
+    res.status(201).json({ id, name, quantity, unit, price });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -220,13 +234,13 @@ app.post('/api/pantryItems', async (req, res) => {
 
 app.put('/api/pantryItems/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, quantity, unit } = req.body;
+  const { name, quantity, unit, price = null } = req.body;
   try {
     await dbRun(
-      'UPDATE pantryItems SET name = ?, quantity = ?, unit = ? WHERE id = ?',
-      [name, quantity, unit, id]
+      'UPDATE pantryItems SET name = ?, quantity = ?, unit = ?, price = ? WHERE id = ?',
+      [name, quantity, unit, price, id]
     );
-    res.json({ id, name, quantity, unit });
+    res.json({ id, name, quantity, unit, price });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -245,21 +259,25 @@ app.delete('/api/pantryItems/:id', async (req, res) => {
 // API Endpoints for Shopping List
 app.get('/api/shoppingList', async (req, res) => {
   try {
-    const shoppingList = await dbAll('SELECT * FROM shoppingList');
-    res.json(shoppingList);
+    const items = await dbAll('SELECT * FROM shoppingList');
+    // Convert purchased from 0/1 to boolean for frontend
+    res.json(items.map(item => ({
+      ...item,
+      purchased: !!item.purchased
+    })));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 app.post('/api/shoppingList', async (req, res) => {
-  const { id, name, quantity, unit } = req.body;
+  const { id, name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
   try {
     await dbRun(
-      'INSERT INTO shoppingList (id, name, quantity, unit) VALUES (?, ?, ?, ?)',
-      [id, name, quantity, unit]
+      'INSERT INTO shoppingList (id, name, quantity, unit, purchased, recipeSource) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, name, quantity, unit, purchased ? 1 : 0, recipeSource]
     );
-    res.status(201).json({ id, name, quantity, unit });
+    res.status(201).json({ id, name, quantity, unit, purchased, recipeSource });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -267,13 +285,13 @@ app.post('/api/shoppingList', async (req, res) => {
 
 app.put('/api/shoppingList/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, quantity, unit } = req.body;
+  const { name, quantity, unit, purchased = 0, recipeSource = '' } = req.body;
   try {
     await dbRun(
-      'UPDATE shoppingList SET name = ?, quantity = ?, unit = ? WHERE id = ?',
-      [name, quantity, unit, id]
+      'UPDATE shoppingList SET name = ?, quantity = ?, unit = ?, purchased = ?, recipeSource = ? WHERE id = ?',
+      [name, quantity, unit, purchased ? 1 : 0, recipeSource, id]
     );
-    res.json({ id, name, quantity, unit });
+    res.json({ id, name, quantity, unit, purchased, recipeSource });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
