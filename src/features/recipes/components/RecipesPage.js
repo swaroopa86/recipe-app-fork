@@ -135,7 +135,7 @@ function getCategoryTag(ingredientName) {
 }
 
 // --- Main Component ---
-const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], currentUser, refreshPantryItems, macrosByRecipe = {} }) => {
+const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], currentUser, refreshPantryItems, macrosByRecipe = {}, pantryDetails }) => {
   const [currentRecipe, setCurrentRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: '', unit: 'cups' }],
@@ -317,7 +317,8 @@ const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], current
       const newRecipe = {
         ...currentRecipe,
         ingredients: filteredIngredients,
-        id: Date.now().toString() // Ensure ID is a string for backend
+        id: Date.now().toString(), // Ensure ID is a string for backend
+        pantryId: pantryDetails?.pantryId
       };
       try {
         await createRecipe(newRecipe);
@@ -339,7 +340,7 @@ const RecipesPage = ({ recipes, users, refreshRecipes, pantryItems = [], current
       setIngredientSuggestions([]);
       setSuggestionIndex(null);
     }
-  }, [currentRecipe, refreshRecipes]);
+  }, [currentRecipe, refreshRecipes, pantryDetails?.pantryId]);
 
   const toggleForm = useCallback(() => {
     setShowForm(prev => !prev);

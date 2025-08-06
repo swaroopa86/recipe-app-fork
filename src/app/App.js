@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useLocalStorage } from '../shared/hooks/useLocalStorage';
-import { fetchRecipes, fetchUsers, fetchPantryItems, fetchShoppingList } from '../shared/api';
-import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, ReportsPage, Chatbot, CaloricGoalPage } from '../features';
+import { fetchRecipes, fetchUsers, fetchPantryItems, fetchShoppingList, fetchPantryDetails, getPendingInvitation } from '../shared/api';
+import { RecipesPage, UsersPage, UserDetailsPage, PantryPage, CookingForPage, ShoppingListPage, LoginPage, ReportsPage, PantrySetupPage, InviteOthersPage, InvitationResponsePage, Chatbot, CaloricGoalPage } from '../features';
 import { getDecryptedGoogleClientId } from '../utils/encryption';
 import './App.css';
 import { getMacros } from '../features/recipes/components/RecipesPage';
@@ -14,47 +14,105 @@ function App() {
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
   const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'reports', or 'user-details'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+  const [pantryDetails, setPantryDetails] = useState(null);
+  const [showPantrySetup, setShowPantrySetup] = useState(false);
+  const [showInviteOthers, setShowInviteOthers] = useState(false);
+  const [showInvitationResponse, setShowInvitationResponse] = useState(false);
+  const [pendingInvitation, setPendingInvitation] = useState(null);
+  const [isLoadingPantryDetails, setIsLoadingPantryDetails] = useState(false);
   const [macrosByRecipe, setMacrosByRecipe] = useState({});
 
-  const handleLogin = (user) => {
+    const handleLogin = async (user) => {
     setCurrentUser(user);
+    setIsLoadingPantryDetails(true);
+    
+    // Check if user has pantry details
+    try {
+      const details = await fetchPantryDetails(user.id);
+      setPantryDetails(details);
+      setShowPantrySetup(false);
+      setShowInvitationResponse(false);
+    } catch (error) {
+      // If no pantry details found, check for pending invitations
+      try {
+        const invitationData = await getPendingInvitation(user.email);
+        if (invitationData) {
+          setPendingInvitation(invitationData);
+          setShowInvitationResponse(true);
+          setShowPantrySetup(false);
+        } else {
+          // No pending invitations, show setup page
+          setShowPantrySetup(true);
+          setShowInvitationResponse(false);
+        }
+             } catch (invitationError) {
+         // Error checking for pending invitations
+         // Fallback to setup page if invitation check fails
+         setShowPantrySetup(true);
+         setShowInvitationResponse(false);
+       }
+    } finally {
+      setIsLoadingPantryDetails(false);
+    }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setPantryDetails(null);
+    setShowPantrySetup(false);
+    setShowInviteOthers(false);
+    setShowInvitationResponse(false);
+    setPendingInvitation(null);
+    setIsLoadingPantryDetails(false);
   };
 
   const refreshRecipes = useCallback(async () => {
-    const data = await fetchRecipes();
-    setRecipes(data);
-  }, []);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchRecipes(pantryDetails.pantryId);
+      setRecipes(data);
+    } else {
+      setRecipes([]);
+    }
+  }, [pantryDetails?.pantryId]);
 
   const refreshUsers = useCallback(async () => {
-    const data = await fetchUsers();
-    setUsers(data.map(user => ({
-      ...user,
-      allergens: new Set(user.allergens || [])
-    })));
-  }, []);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchUsers(pantryDetails.pantryId);
+      setUsers(data.map(user => ({
+        ...user,
+        allergens: new Set(user.allergens || [])
+      })));
+    } else {
+      setUsers([]);
+    }
+  }, [pantryDetails?.pantryId]);
 
   const refreshPantryItems = useCallback(async () => {
-    const data = await fetchPantryItems();
-    setPantryItems(data);
-  }, []);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchPantryItems(pantryDetails.pantryId);
+      setPantryItems(data);
+    } else {
+      setPantryItems([]);
+    }
+  }, [pantryDetails?.pantryId]);
 
   const refreshShoppingList = useCallback(async () => {
-    const data = await fetchShoppingList();
-    setShoppingList(data || []);
-  }, [setShoppingList]);
+    if (pantryDetails?.pantryId) {
+      const data = await fetchShoppingList(pantryDetails.pantryId);
+      setShoppingList(data || []);
+    } else {
+      setShoppingList([]);
+    }
+  }, [pantryDetails?.pantryId, setShoppingList]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !showPantrySetup && !showInviteOthers && !showInvitationResponse) {
       refreshRecipes();
       refreshUsers();
       refreshPantryItems();
       refreshShoppingList();
     }
-  }, [currentUser, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
+  }, [currentUser, showPantrySetup, showInviteOthers, showInvitationResponse, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
 
   useEffect(() => {
     async function fetchAllMacros() {
@@ -76,11 +134,78 @@ function App() {
     );
   }
 
+  // If user needs to set up pantry details, show setup page
+  if (showPantrySetup) {
+    return (
+      <PantrySetupPage 
+        currentUser={currentUser} 
+        onComplete={async () => {
+          setShowPantrySetup(false);
+          setIsLoadingPantryDetails(true);
+          try {
+            // Refresh pantry details after setup
+            const details = await fetchPantryDetails(currentUser.id);
+            setPantryDetails(details);
+            // Show invite others page after pantry setup
+            setShowInviteOthers(true);
+                     } catch (error) {
+             // Error fetching pantry details after setup
+           } finally {
+            setIsLoadingPantryDetails(false);
+          }
+        }} 
+      />
+    );
+  }
+
+  // If user needs to respond to an invitation, show invitation response page
+  if (showInvitationResponse && pendingInvitation) {
+    return (
+      <InvitationResponsePage 
+        invitation={pendingInvitation.invitation}
+        pantryDetails={pendingInvitation.pantryDetails}
+        currentUser={currentUser}
+        onAccept={(acceptedPantryDetails) => {
+          setPantryDetails(acceptedPantryDetails);
+          setShowInvitationResponse(false);
+          setPendingInvitation(null);
+        }}
+        onDecline={() => {
+          setShowInvitationResponse(false);
+          setPendingInvitation(null);
+          setShowPantrySetup(true);
+        }}
+      />
+    );
+  }
+
+  // If user needs to invite others, show invite page
+  if (showInviteOthers) {
+    return (
+      <InviteOthersPage 
+        pantryDetails={pantryDetails}
+        onComplete={() => {
+          setShowInviteOthers(false);
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="App">
       <header className="App-header">
         <div className="header-top">
-          <h1>Smart Pantry</h1>
+          <h1>
+            {isLoadingPantryDetails ? (
+              'Loading your pantry...'
+            ) : pantryDetails ? (
+              <>
+                Smart pantry: <span className="pantry-name">{pantryDetails.pantryName}</span>
+              </>
+            ) : (
+              'Smart Pantry'
+            )}
+          </h1>
           <div className="user-info">
             <img 
               src={currentUser.picture} 
@@ -173,6 +298,7 @@ function App() {
             currentUser={currentUser}
             refreshPantryItems={refreshPantryItems}
             macrosByRecipe={macrosByRecipe}
+            pantryDetails={pantryDetails}
           />
         )}
         {currentPage === 'cooking-for' && (
@@ -184,13 +310,22 @@ function App() {
             shoppingList={shoppingList}
             setShoppingList={setShoppingList}
             macrosByRecipe={macrosByRecipe}
+            pantryDetails={pantryDetails}
           />
         )}
         {currentPage === 'pantry' && (
-          <PantryPage pantryItems={pantryItems} refreshPantryItems={refreshPantryItems} />
+          <PantryPage 
+            pantryItems={pantryItems} 
+            refreshPantryItems={refreshPantryItems}
+            pantryDetails={pantryDetails}
+          />
         )}
         {currentPage === 'shopping-list' && (
-          <ShoppingListPage shoppingList={shoppingList} setShoppingList={setShoppingList} />
+          <ShoppingListPage 
+            shoppingList={shoppingList} 
+            setShoppingList={setShoppingList}
+            pantryDetails={pantryDetails}
+          />
         )}
         {currentPage === 'reports' && (
           <ReportsPage 
@@ -199,10 +334,11 @@ function App() {
           />
         )}
         {currentPage === 'users' && (
-          <UsersPage users={users} refreshUsers={refreshUsers} />
-        )}
-        {currentPage === 'user-details' && (
-          <UserDetailsPage currentUser={currentUser} />
+          <UsersPage 
+            users={users} 
+            refreshUsers={refreshUsers}
+            pantryDetails={pantryDetails}
+          />
         )}
         {currentPage === 'user-details' && (
           <UserDetailsPage currentUser={currentUser} />

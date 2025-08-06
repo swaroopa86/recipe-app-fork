@@ -3,7 +3,7 @@ import ShoppingItemCard from './ShoppingItemCard';
 import { fetchShoppingList, createShoppingListItem, updateShoppingListItem, deleteShoppingListItem } from '../../../shared/api';
 import './ShoppingListPage.css';
 
-const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
+const ShoppingListPage = ({ shoppingList, setShoppingList, pantryDetails }) => {
   const [editingId, setEditingId] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -24,12 +24,12 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
   // Handle item updates
   const updateItem = useCallback(async (itemId, updates) => {
     const item = shoppingList.find(item => item.id === itemId);
-    if (!item) return;
-    const updated = { ...item, ...updates };
+    if (!item || !pantryDetails?.pantryId) return;
+    const updated = { ...item, ...updates, pantryId: pantryDetails.pantryId };
     await updateShoppingListItem(updated);
-    const data = await fetchShoppingList();
+    const data = await fetchShoppingList(pantryDetails.pantryId);
     setShoppingList(data || []);
-  }, [setShoppingList, shoppingList]);
+  }, [setShoppingList, shoppingList, pantryDetails?.pantryId]);
 
   // Handle item deletion
   const deleteItem = useCallback(async (itemId) => {
@@ -62,22 +62,25 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
 
   // Handle adding a new manual item
   const addManualItem = useCallback(async () => {
+    if (!pantryDetails?.pantryId) return;
+    
     const newItem = {
       id: Date.now() + Math.random(),
       name: 'New Item',
       quantity: 1,
       unit: 'item',
       recipeSource: 'Manual Entry',
-      purchased: false
+      purchased: false,
+      pantryId: pantryDetails.pantryId
     };
     await createShoppingListItem(newItem);
     // Fetch the latest shopping list
-    const data = await fetchShoppingList();
+    const data = await fetchShoppingList(pantryDetails.pantryId);
     setShoppingList(data || []);
     // Find the latest item by id (in case backend modifies id)
     const found = (data || []).find(item => item.name === newItem.name && item.quantity === newItem.quantity && item.unit === newItem.unit && item.recipeSource === newItem.recipeSource && item.purchased === newItem.purchased);
     setEditingId(found ? found.id : newItem.id);
-  }, [setShoppingList]);
+  }, [setShoppingList, pantryDetails?.pantryId]);
   return (
     <div className="shopping-list-container">
       <div className="shopping-list-header">
