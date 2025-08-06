@@ -46,8 +46,15 @@ const db = new sqlite3.Database(`${dbPath}/recipe_app.db`, (err) => {
         name TEXT,
         quantity TEXT,
         unit TEXT,
-        price REAL,
         FOREIGN KEY (pantryId) REFERENCES pantryDetails (pantryId)
+      )`);
+      db.run(`CREATE TABLE IF NOT EXISTS price_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pantry_item_id TEXT,
+        price REAL,
+        quantity REAL,
+        added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(pantry_item_id) REFERENCES pantryItems(id)
       )`);
       db.run(`CREATE TABLE IF NOT EXISTS shoppingList (
         id TEXT PRIMARY KEY,
@@ -396,11 +403,34 @@ app.get('/api/pantryItems/:pantryId', async (req, res) => {
 app.post('/api/pantryItems', async (req, res) => {
   const { id, pantryId, name, quantity, unit, price = null } = req.body;
   try {
-    await dbRun(
-      'INSERT INTO pantryItems (id, pantryId, name, quantity, unit, price) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, pantryId, name, quantity, unit, price]
+    // Check for existing item by pantryId and normalized name
+    const normalizedName = name.trim().toLowerCase();
+    const existing = await dbGet(
+      'SELECT * FROM pantryItems WHERE pantryId = ? AND LOWER(TRIM(name)) = ?',
+      [pantryId, normalizedName]
     );
-    res.status(201).json({ id, pantryId, name, quantity, unit, price });
+    let finalId = id;
+    if (existing) {
+      // Merge: add quantities and update price
+      const newQuantity = (parseFloat(existing.quantity) || 0) + (parseFloat(quantity) || 0);
+      await dbRun(
+        'UPDATE pantryItems SET quantity = ?, unit = ? WHERE id = ?',
+        [newQuantity.toString(), unit, existing.id]
+      );
+      finalId = existing.id;
+    } else {
+      // Insert new
+      await dbRun(
+        'INSERT INTO pantryItems (id, pantryId, name, quantity, unit) VALUES (?, ?, ?, ?, ?)',
+        [id, pantryId, name, quantity, unit]
+      );
+    }
+    // Insert into price_history
+    await dbRun(
+      'INSERT INTO price_history (pantry_item_id, price, quantity) VALUES (?, ?, ?)',
+      [finalId, price, quantity]
+    );
+    res.status(201).json({ id: finalId, pantryId, name, quantity, unit });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -411,10 +441,75 @@ app.put('/api/pantryItems/:id', async (req, res) => {
   const { pantryId, name, quantity, unit, price = null } = req.body;
   try {
     await dbRun(
-      'UPDATE pantryItems SET pantryId = ?, name = ?, quantity = ?, unit = ?, price = ? WHERE id = ?',
-      [pantryId, name, quantity, unit, price, id]
+      'UPDATE pantryItems SET pantryId = ?, name = ?, quantity = ?, unit = ? WHERE id = ?',
+      [pantryId, name, quantity, unit, id]
     );
-    res.json({ id, pantryId, name, quantity, unit, price });
+    // Insert into price_history
+    await dbRun(
+      'INSERT INTO price_history (pantry_item_id, price, quantity) VALUES (?, ?, ?)',
+      [id, price, quantity]
+    );
+    res.json({ id, pantryId, name, quantity, unit });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API endpoint to log price history directly
+app.post('/api/price_history', async (req, res) => {
+  const { pantry_item_id, price, quantity } = req.body;
+  try {
+    await dbRun(
+      'INSERT INTO price_history (pantry_item_id, price, quantity) VALUES (?, ?, ?)',
+      [pantry_item_id, price, quantity]
+    );
+    res.status(201).json({ pantry_item_id, price, quantity });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET endpoint to aggregate price history for the past week
+app.get('/api/price_history/weekly', async (req, res) => {
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    // Get all price history records from the last 7 days
+    const rows = await dbAll(
+      `SELECT ph.*, pi.name as itemName
+       FROM price_history ph
+       LEFT JOIN pantryItems pi ON ph.pantry_item_id = pi.id
+       WHERE ph.added_at >= ?`,
+      [weekAgo]
+    );
+    // Calculate total spent and per-item/recipe aggregates
+    let totalSpent = 0;
+    const itemSpend = {};
+    rows.forEach(row => {
+      if (row.price != null && row.price !== '') {
+        const spent = (row.price || 0) * (row.quantity || 1);
+        totalSpent += spent;
+        if (!itemSpend[row.pantry_item_id]) {
+        itemSpend[row.pantry_item_id] = {
+          name: row.itemName || row.pantry_item_id,
+          totalSpent: 0,
+          totalQuantity: 0,
+          lastPrice: row.price
+        };
+      }
+        itemSpend[row.pantry_item_id].totalSpent += spent;
+        itemSpend[row.pantry_item_id].totalQuantity += row.quantity || 0;
+        itemSpend[row.pantry_item_id].lastPrice = row.price;
+      }
+    });
+    res.json({
+      period: {
+        start: weekAgo,
+        end: new Date().toISOString()
+      },
+      totalSpent,
+      itemSpend: Object.values(itemSpend),
+      raw: rows
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

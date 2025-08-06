@@ -141,7 +141,7 @@ function App() {
       refreshPantryItems();
       refreshShoppingList();
     }
-  }, [currentUser, pantryDetails, showPantrySetup, showInviteOthers, showInvitationResponse, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
+  }, [currentUser, pantryDetails?.pantryId, showPantrySetup, showInviteOthers, showInvitationResponse]);
 
   // Refresh data when page becomes visible (browser refresh or tab switch)
   useEffect(() => {
@@ -160,21 +160,32 @@ function App() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pageshow', handlePageShow);
 
-    return () => {
+    // CLEANUP: Remove listeners when effect re-runs or component unmounts
+    return function cleanup() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pageshow', handlePageShow);
     };
   }, [currentUser, pantryDetails?.pantryId, refreshAllData]);
 
   useEffect(() => {
+    let cancelled = false;
+    const macrosCacheById = {};
     async function fetchAllMacros() {
       const macrosObj = {};
       for (const recipe of recipes) {
-        macrosObj[recipe.id] = await getMacros(recipe.ingredients);
+        if (macrosCacheById[recipe.id]) {
+          macrosObj[recipe.id] = macrosCacheById[recipe.id];
+        } else {
+          const macros = await getMacros(recipe.ingredients);
+          macrosCacheById[recipe.id] = macros;
+          macrosObj[recipe.id] = macros;
+        }
+        if (cancelled) return;
       }
-      setMacrosByRecipe(macrosObj);
+      if (!cancelled) setMacrosByRecipe(macrosObj);
     }
     fetchAllMacros();
+    return () => { cancelled = true; };
   }, [recipes]);
 
   // If user is not logged in, show login page
