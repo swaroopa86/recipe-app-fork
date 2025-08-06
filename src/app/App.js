@@ -14,7 +14,7 @@ function App() {
   const [shoppingList, setShoppingList] = useLocalStorage('shoppingList', []);
   const [currentPage, setCurrentPage] = useState('recipes'); // 'recipes', 'users', 'pantry', 'cooking-for', 'shopping-list', 'reports', or 'user-details'
   const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
-  const [pantryDetails, setPantryDetails] = useState(null);
+  const [pantryDetails, setPantryDetails] = useLocalStorage('pantryDetails', null);
   const [showPantrySetup, setShowPantrySetup] = useState(false);
   const [showInviteOthers, setShowInviteOthers] = useState(false);
   const [showInvitationResponse, setShowInvitationResponse] = useState(false);
@@ -105,14 +105,66 @@ function App() {
     }
   }, [pantryDetails?.pantryId, setShoppingList]);
 
+  // Function to refresh all data
+  const refreshAllData = useCallback(async () => {
+    if (currentUser && pantryDetails?.pantryId) {
+      await Promise.all([
+        refreshRecipes(),
+        refreshUsers(),
+        refreshPantryItems(),
+        refreshShoppingList()
+      ]);
+    }
+  }, [currentUser, pantryDetails?.pantryId, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
+
+  // Validate and restore session on app start
   useEffect(() => {
-    if (currentUser && !showPantrySetup && !showInviteOthers && !showInvitationResponse) {
+    const validateSession = async () => {
+      if (currentUser && !pantryDetails) {
+        try {
+          const details = await fetchPantryDetails(currentUser.id);
+          setPantryDetails(details);
+        } catch (error) {
+          console.error('Error fetching pantry details:', error);
+        }
+      }
+    };
+
+    validateSession();
+  }, [currentUser, pantryDetails, setPantryDetails]);
+
+  // Initial data load
+  useEffect(() => {
+    if (currentUser && pantryDetails?.pantryId && !showPantrySetup && !showInviteOthers && !showInvitationResponse) {
       refreshRecipes();
       refreshUsers();
       refreshPantryItems();
       refreshShoppingList();
     }
-  }, [currentUser, showPantrySetup, showInviteOthers, showInvitationResponse, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
+  }, [currentUser, pantryDetails, showPantrySetup, showInviteOthers, showInvitationResponse, refreshRecipes, refreshUsers, refreshPantryItems, refreshShoppingList]);
+
+  // Refresh data when page becomes visible (browser refresh or tab switch)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && currentUser && pantryDetails?.pantryId) {
+        refreshAllData();
+      }
+    };
+
+    const handlePageShow = (event) => {
+      if (event.persisted && currentUser && pantryDetails?.pantryId) {
+        refreshAllData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [currentUser, pantryDetails?.pantryId, refreshAllData]);
 
   useEffect(() => {
     async function fetchAllMacros() {
@@ -224,21 +276,30 @@ function App() {
         <nav className="main-nav">
           <button
             className={`nav-btn ${currentPage === 'recipes' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('recipes')}
+            onClick={() => {
+              setCurrentPage('recipes');
+              refreshAllData();
+            }}
           >
             <span className="nav-icon">🍳</span>
             Recipes
           </button>
           <button
             className={`nav-btn ${currentPage === 'cooking-for' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('cooking-for')}
+            onClick={() => {
+              setCurrentPage('cooking-for');
+              refreshAllData();
+            }}
           >
             <span className="nav-icon">👨‍🍳</span>
             Cooking For
           </button>
           <button
             className={`nav-btn ${currentPage === 'pantry' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('pantry')}
+            onClick={() => {
+              setCurrentPage('pantry');
+              refreshAllData();
+            }}
           >
             <span className="nav-icon">🥫</span>
             Pantry
@@ -248,7 +309,10 @@ function App() {
           </button>
           <button
             className={`nav-btn ${currentPage === 'shopping-list' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('shopping-list')}
+            onClick={() => {
+              setCurrentPage('shopping-list');
+              refreshAllData();
+            }}
           >
             <span className="nav-icon">🛒</span>
             Shopping List
@@ -258,7 +322,10 @@ function App() {
           </button>
           <button
             className={`nav-btn ${currentPage === 'users' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('users')}
+            onClick={() => {
+              setCurrentPage('users');
+              refreshAllData();
+            }}
           >
             <span className="nav-icon">👥</span>
             Users
