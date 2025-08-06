@@ -112,24 +112,13 @@ const RecipeModal = ({ recipe, isOpen, onClose, pantryItems = [], currentUser, r
           await refreshPantryItems();
         }
         
-        // Show success message with update summary
-        let message = `Great! "${recipe.name}" has been marked as cooked with ${servings} serving(s).`;
-        if (pantryUpdates.length > 0) {
-          message += `\n\nPantry updated: ${pantryUpdates.length} ingredient(s) quantities reduced.`;
-        }
-        if (updateErrors.length > 0) {
-          message += `\n\nNote: ${updateErrors.length} ingredient(s) couldn't be updated automatically.`;
-        }
-        
-        alert(message);
-      } else {
-        alert(`Great! "${recipe.name}" has been marked as cooked with ${servings} serving(s).`);
+        // Recipe marked as cooked successfully - no alert needed
       }
       
       onClose();
     } catch (error) {
-              // Error recording cooked recipe
-      alert('Failed to record the recipe as cooked. Please try again.');
+      // Error recording cooked recipe - handle silently or with console log
+      console.error('Failed to record the recipe as cooked:', error);
     }
   };
 

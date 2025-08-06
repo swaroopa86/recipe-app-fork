@@ -34,9 +34,9 @@ const ShoppingListPage = ({ shoppingList, setShoppingList, pantryDetails }) => {
   // Handle item deletion
   const deleteItem = useCallback(async (itemId) => {
     await deleteShoppingListItem(itemId);
-    const data = await fetchShoppingList();
+    const data = await fetchShoppingList(pantryDetails?.pantryId);
     setShoppingList(data || []);
-  }, [setShoppingList]);
+  }, [setShoppingList, pantryDetails?.pantryId]);
 
   // Handle marking item as purchased/unpurchased
   const togglePurchased = useCallback(async (itemId) => {
@@ -56,9 +56,9 @@ const ShoppingListPage = ({ shoppingList, setShoppingList, pantryDetails }) => {
   const clearPurchasedItems = useCallback(async () => {
     const toDelete = shoppingList.filter(item => item.purchased);
     await Promise.all(toDelete.map(item => deleteShoppingListItem(item.id)));
-    const data = await fetchShoppingList();
+    const data = await fetchShoppingList(pantryDetails?.pantryId);
     setShoppingList(data || []);
-  }, [setShoppingList, shoppingList]);
+  }, [setShoppingList, shoppingList, pantryDetails?.pantryId]);
 
   // Handle adding a new manual item
   const addManualItem = useCallback(async () => {
