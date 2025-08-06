@@ -1,61 +1,16 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import ShoppingItemCard from './ShoppingItemCard';
+import { fetchShoppingList, createShoppingListItem, updateShoppingListItem, deleteShoppingListItem } from '../../../shared/api';
 import './ShoppingListPage.css';
 
-const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
+const ShoppingListPage = ({ shoppingList, setShoppingList, pantryDetails }) => {
   const [editingId, setEditingId] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Consolidate duplicate ingredients on component mount
-  useEffect(() => {
-    const consolidateExistingDuplicates = () => {
-      if (shoppingList.length === 0) return;
-      
-      const consolidatedList = [];
-      
-      shoppingList.forEach(item => {
-        // Check if a similar item already exists in consolidated list
-        const existingIndex = consolidatedList.findIndex(existing => {
-          const existingName = existing.name.toLowerCase().trim();
-          const itemName = item.name.toLowerCase().trim();
-          
-          return (existingName === itemName) ||
-                 ((existingName.includes(itemName) || itemName.includes(existingName)) &&
-                 existing.unit === item.unit);
-        });
-        
-        if (existingIndex !== -1) {
-          // Merge with existing item
-          const existingItem = consolidatedList[existingIndex];
-          const existingSources = existingItem.recipeSource.split(', ');
-          const itemSources = item.recipeSource.split(', ');
-          const combinedSources = [...new Set([...existingSources, ...itemSources])].join(', ');
-          
-          consolidatedList[existingIndex] = {
-            ...existingItem,
-            quantity: existingItem.quantity + item.quantity,
-            recipeSource: combinedSources,
-            purchased: existingItem.purchased || item.purchased // Keep purchased status if either is purchased
-          };
-        } else {
-          // Add as new item
-          consolidatedList.push({ ...item });
-        }
-      });
-      
-      // Only update if consolidation actually changed something
-      if (consolidatedList.length !== shoppingList.length) {
-        setShoppingList(consolidatedList);
-      }
-    };
-    
-    consolidateExistingDuplicates();
-  }, []); // Only run once on mount
-
+  
   // Calculate total items and estimated cost (placeholder)
   const totalItems = shoppingList.length;
   const purchasedItems = shoppingList.filter(item => item.purchased).length;
-  const remainingItems = totalItems - purchasedItems;
 
   // Group items into only 2 categories: Manual Entry and Recipe items
   const manualItems = shoppingList.filter(item => 
@@ -67,49 +22,65 @@ const ShoppingListPage = ({ shoppingList, setShoppingList }) => {
   );
 
   // Handle item updates
-  const updateItem = useCallback((itemId, updates) => {
-    setShoppingList(prevList => 
-      prevList.map(item => 
-        item.id === itemId ? { ...item, ...updates } : item
-      )
-    );
-  }, [setShoppingList]);
+  const updateItem = useCallback(async (itemId, updates) => {
+    const item = shoppingList.find(item => item.id === itemId);
+    if (!item || !pantryDetails?.pantryId) return;
+    const updated = { ...item, ...updates, pantryId: pantryDetails.pantryId };
+    await updateShoppingListItem(updated);
+    const data = await fetchShoppingList(pantryDetails.pantryId);
+    setShoppingList(data || []);
+  }, [setShoppingList, shoppingList, pantryDetails?.pantryId]);
 
   // Handle item deletion
-  const deleteItem = useCallback((itemId) => {
-    setShoppingList(prevList => prevList.filter(item => item.id !== itemId));
+  const deleteItem = useCallback(async (itemId) => {
+    await deleteShoppingListItem(itemId);
+    const data = await fetchShoppingList();
+    setShoppingList(data || []);
   }, [setShoppingList]);
 
   // Handle marking item as purchased/unpurchased
-  const togglePurchased = useCallback((itemId) => {
-    updateItem(itemId, { purchased: !shoppingList.find(item => item.id === itemId)?.purchased });
+  const togglePurchased = useCallback(async (itemId) => {
+    const item = shoppingList.find(item => item.id === itemId);
+    if (!item) return;
+    await updateItem(itemId, { purchased: !item.purchased });
   }, [updateItem, shoppingList]);
 
   // Handle clearing all items
-  const clearAllItems = useCallback(() => {
+  const clearAllItems = useCallback(async () => {
+    await Promise.all(shoppingList.map(item => deleteShoppingListItem(item.id)));
     setShoppingList([]);
     setShowClearConfirm(false);
-  }, [setShoppingList]);
+  }, [setShoppingList, shoppingList]);
 
   // Handle clearing only purchased items
-  const clearPurchasedItems = useCallback(() => {
-    setShoppingList(prevList => prevList.filter(item => !item.purchased));
-  }, [setShoppingList]);
+  const clearPurchasedItems = useCallback(async () => {
+    const toDelete = shoppingList.filter(item => item.purchased);
+    await Promise.all(toDelete.map(item => deleteShoppingListItem(item.id)));
+    const data = await fetchShoppingList();
+    setShoppingList(data || []);
+  }, [setShoppingList, shoppingList]);
 
   // Handle adding a new manual item
-  const addManualItem = useCallback(() => {
+  const addManualItem = useCallback(async () => {
+    if (!pantryDetails?.pantryId) return;
+    
     const newItem = {
       id: Date.now() + Math.random(),
       name: 'New Item',
       quantity: 1,
       unit: 'item',
       recipeSource: 'Manual Entry',
-      purchased: false
+      purchased: false,
+      pantryId: pantryDetails.pantryId
     };
-    setShoppingList(prevList => [...prevList, newItem]);
-    setEditingId(newItem.id);
-  }, [setShoppingList]);
-
+    await createShoppingListItem(newItem);
+    // Fetch the latest shopping list
+    const data = await fetchShoppingList(pantryDetails.pantryId);
+    setShoppingList(data || []);
+    // Find the latest item by id (in case backend modifies id)
+    const found = (data || []).find(item => item.name === newItem.name && item.quantity === newItem.quantity && item.unit === newItem.unit && item.recipeSource === newItem.recipeSource && item.purchased === newItem.purchased);
+    setEditingId(found ? found.id : newItem.id);
+  }, [setShoppingList, pantryDetails?.pantryId]);
   return (
     <div className="shopping-list-container">
       <div className="shopping-list-header">

@@ -1,7 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchPantryDetails } from '../../../shared/api';
 import './UserDetailsPage.css';
 
 const UserDetailsPage = ({ currentUser }) => {
+  const [pantryDetails, setPantryDetails] = useState(null);
+  const [, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPantryDetails = async () => {
+      if (currentUser?.id) {
+        try {
+          const details = await fetchPantryDetails(currentUser.id);
+          setPantryDetails(details);
+        } catch (error) {
+          console.error('Error loading pantry details:', error);
+          setPantryDetails(null);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    loadPantryDetails();
+  }, [currentUser?.id]);
+
   if (!currentUser) {
     return (
       <div className="user-details-container">
@@ -63,6 +87,22 @@ const UserDetailsPage = ({ currentUser }) => {
                 <span className="detail-label">Login Time</span>
                 <span className="detail-value">{formatDate(currentUser.loginTime)}</span>
               </div>
+              {pantryDetails && (
+                <>
+                  <div className="detail-item">
+                    <span className="detail-label">Pantry Name</span>
+                    <span className="detail-value">{pantryDetails.pantryName}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Pantry Type</span>
+                    <span className="detail-value">
+                      <span className={`pantry-type-badge ${pantryDetails.pantryType.toLowerCase()}`}>
+                        {pantryDetails.pantryType}
+                      </span>
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

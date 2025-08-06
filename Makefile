@@ -7,13 +7,14 @@ PORT=3000
 .PHONY: build up down clean
 
 build:
-	docker build -t $(IMAGE_NAME) .
+	docker-compose build
 
 up:
-	docker run -d -p $(PORT):80 --name $(IMAGE_NAME) $(IMAGE_NAME)
+	docker-compose up -d
 
 down:
-	-docker stop $(IMAGE_NAME) && docker rm $(IMAGE_NAME)
+	docker-compose down
+
 
 clean:
-	-docker rmi $(IMAGE_NAME)
+	docker-compose down --rmi all --volumes --remove-orphans

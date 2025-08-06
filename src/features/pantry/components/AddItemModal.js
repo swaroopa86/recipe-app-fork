@@ -1,6 +1,8 @@
 import React from 'react';
 import { UNITS } from '../../../shared/constants/units';
 
+import { useState } from 'react';
+
 const AddItemModal = ({
   showModal,
   currentItem,
@@ -9,9 +11,17 @@ const AddItemModal = ({
   onSubmit,
   onNameChange,
   onQuantityChange,
-  onUnitChange
+  onUnitChange,
+  onPriceChange
 }) => {
+  const [multiplyPrice, setMultiplyPrice] = useState(true);
+
   if (!showModal) return null;
+
+  // Calculate costs
+  const price = parseFloat(currentItem.price) || 0;
+  const quantity = parseFloat(currentItem.quantity) || 0;
+  const multipliedCost = price * quantity;
 
   return (
     <div className="form-overlay">
@@ -69,6 +79,37 @@ const AddItemModal = ({
             </div>
           </div>
 
+          <div className="form-group">
+            <label htmlFor="price">Estimated Price:</label>
+            <input
+              id="price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={currentItem.price || ''}
+              onChange={onPriceChange}
+              placeholder="0.00"
+              autoComplete="off"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={multiplyPrice}
+                onChange={e => setMultiplyPrice(e.target.checked)}
+                style={{ marginRight: '8px' }}
+              />
+              Multiply price by quantity
+            </label>
+            <div style={{ marginTop: 6, color: '#555', fontSize: '0.97em' }}>
+              Cost to log: <b>${multiplyPrice ? multipliedCost.toFixed(2) : price.toFixed(2)}</b>
+              <br />
+              (Price: ${price.toFixed(2)}{multiplyPrice ? ` × Qty: ${quantity} = $${multipliedCost.toFixed(2)}` : ''})
+            </div>
+          </div>
+
           <div className="form-actions">
             <button type="button" onClick={onClose} className="cancel-btn">
               Cancel
@@ -83,4 +124,4 @@ const AddItemModal = ({
   );
 };
 
-export default AddItemModal; 
+export default AddItemModal;

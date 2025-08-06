@@ -34,6 +34,15 @@
   font-size: 2.5rem;
   font-weight: 300;
   margin: 0;
+  line-height: 1.2;
+  word-wrap: break-word;
+  max-width: 60%;
+  transition: all 0.3s ease;
+}
+
+.App-header h1 .pantry-name {
+  font-weight: 400;
+  color: white;
 }
 
 .user-info {
@@ -194,8 +203,10 @@
   }
   
   .App-header h1 {
-    font-size: 2rem;
+    font-size: 1.8rem;
     margin-bottom: 0.75rem;
+    max-width: 100%;
+    text-align: center;
   }
 
   .user-info {
